@@ -19,6 +19,7 @@ interface WalletProps {
 
 export default function Wallet({ account, type, webAuthnCredentials }: WalletProps) {
   const [loading, setLoading] = useState(false)
+  const [loadingText, setLoadingText] = useState('Loading...')
   const [funded, setFunded] = useState(false)
   const [targetOpHash, setTargetOpHash] = useState<Hex>()
 
@@ -73,12 +74,12 @@ export default function Wallet({ account, type, webAuthnCredentials }: WalletPro
 
       if (!funded) {
         // fund test token to account
+        setLoadingText('Funding test token to account ...')
         console.log('Funding test token to account')
         await fundTestToken(account.address)
         console.log('Funded test token to account')
         setFunded(true)
       }
-
       const paymaster = new Web3AuthPaymaster({
         apiKey: process.env.NEXT_PUBLIC_WEB3AUTH_PAYMASTER_API_KEY || '',
         chains: [
@@ -88,8 +89,10 @@ export default function Wallet({ account, type, webAuthnCredentials }: WalletPro
         paymasterVersion: PaymasterVersion.V0_2_0,
       })
 
+      setLoadingText('Preparing target user operation ...')
       const targetOp = await prepareTargetOp(paymaster)
 
+      setLoadingText('Preparing source user operation ...')
       const sourceOp = (await accountClient.prepareUserOperation({
         account,
         parameters: ['factory', 'fees', 'paymaster', 'nonce', 'signature'],
@@ -121,8 +124,10 @@ export default function Wallet({ account, type, webAuthnCredentials }: WalletPro
       })
 
       // Send source chain operation
+      setLoadingText('Sending source user operation ...')
       const sourceHash = await accountClient.sendUserOperation({ ...sourceOp })
       console.log('Source user op hash:', sourceHash)
+      setLoadingText('Waiting for source user operation receipt ...')
       const { receipt } = await accountClient.waitForUserOperationReceipt({ hash: sourceHash })
       console.log('Source receipt:', receipt.transactionHash)
 
@@ -151,9 +156,9 @@ export default function Wallet({ account, type, webAuthnCredentials }: WalletPro
       <h1>Wallet</h1>
       <div className="flex items-center justify-center gap-2">
         <p className="text-sm bg-gray-100 p-2 rounded-md">{account.address}</p>
-        <p className="text-sm bg-green-100 p-2 rounded-md">{type}</p>
+        <p className="text-sm bg-red-100 p-2 rounded-md">{type}</p>
       </div>
-      {targetOpHash && <p className="text-xs bg-red-50 p-2 rounded-md">Target userOp hash: {targetOpHash}</p>}
+      {targetOpHash && <p className="text-xs bg-green-50 p-2 rounded-md">Target userOp hash: {targetOpHash}</p>}
       <button className="bg-blue-400 mt-8 p-2 rounded-md text-sm w-full" onClick={sendUserOperation} disabled={loading}>
         Send User Operation
       </button>
@@ -167,7 +172,7 @@ export default function Wallet({ account, type, webAuthnCredentials }: WalletPro
           </button>
         </>
       )}
-      {loading && <div className="absolute inset-0 flex items-center justify-center bg-gray-100/80 text-sm">Loading...</div>}
+      {loading && <div className="absolute inset-0 flex items-center justify-center bg-gray-100/80 text-sm">{loadingText}</div>}
     </div>
   )
 }

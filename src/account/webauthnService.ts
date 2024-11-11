@@ -4,7 +4,7 @@ export async function webauthnRegister() {
   const ts = Date.now()
   const username = `user-${ts}`
 
-  const optionsUrl = 'https://passkeys.zerodev.app/api/v3/147e33a3-6671-4681-a6e2-f52e6bc7ee5e/register/options'
+  const optionsUrl = 'https://lrc-accounts.web3auth.io/api/register/options'
   const resp = await fetch(optionsUrl, {
     method: 'POST',
     headers: {
@@ -20,7 +20,7 @@ export async function webauthnRegister() {
   const { startRegistration } = await import('@simplewebauthn/browser')
   const cred = await startRegistration({ optionsJSON: options })
 
-  const verifyUrl = 'https://passkeys.zerodev.app/api/v3/147e33a3-6671-4681-a6e2-f52e6bc7ee5e/register/verify'
+  const verifyUrl = 'https://lrc-accounts.web3auth.io/api/register/verify'
   const verifyResp = await fetch(verifyUrl, {
     method: 'POST',
     headers: {
@@ -30,6 +30,7 @@ export async function webauthnRegister() {
       username,
       cred,
       userId,
+      accountVersion: '0.1.0'
     }),
   })
 
