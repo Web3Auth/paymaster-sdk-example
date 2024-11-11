@@ -10,7 +10,7 @@ import { toWebAuthnKernelSmartAccount } from '@/account/smartAccount'
 import { b64ToBytes } from '@/account/utils'
 import { webauthnRegister } from '@/account/webauthnService'
 import { WebAuthnCredentials } from '@/account/webauthnSigner'
-import { SOURCE_CHAIN, SOURCE_CHAIN_RPC_URL } from '@/config/networks'
+import { SOURCE_CHAIN, SOURCE_CHAIN_RPC_URL } from '@/config'
 
 interface MenuProps {
   onAccountCreated: (address: SmartAccount, type: 'ecdsa' | 'webauthn', webAuthnCredentials?: WebAuthnCredentials) => void

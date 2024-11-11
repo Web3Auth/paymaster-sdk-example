@@ -3,7 +3,7 @@ import { bytesToBigInt, createWalletClient, encodeFunctionData, type Hex, hexToB
 import { privateKeyToAccount } from 'viem/accounts'
 import { waitForTransactionReceipt } from 'viem/actions'
 
-import { SOURCE_CHAIN, SOURCE_CHAIN_RPC_URL } from '@/config/networks'
+import { SOURCE_CHAIN, SOURCE_CHAIN_RPC_URL, WEB3PAY_TEST_TOKEN } from '@/config'
 
 const RIP7212_SUPPORTED_NETWORKS = [80002, 137]
 
@@ -11,15 +11,6 @@ export const isRIP7212SupportedNetwork = (chainId: number): boolean => RIP7212_S
 
 export const uint8ArrayToHexString = (array: Uint8Array): `0x${string}` => {
   return `0x${Array.from(array, (byte) => byte.toString(16).padStart(2, '0')).join('')}` as `0x${string}`
-}
-
-export const hexStringToUint8Array = (hexString: string): Uint8Array => {
-  const formattedHexString = hexString.startsWith('0x') ? hexString.slice(2) : hexString
-  const byteArray = new Uint8Array(formattedHexString.length / 2)
-  for (let i = 0; i < formattedHexString.length; i += 2) {
-    byteArray[i / 2] = Number.parseInt(formattedHexString.substring(i, i + 2), 16)
-  }
-  return byteArray
 }
 
 export const b64ToBytes = (base64: string): Uint8Array => {
@@ -146,10 +137,8 @@ export const fundTestToken = async (receiverAddress: Hex) => {
     transport: http(SOURCE_CHAIN_RPC_URL),
   })
 
-  const testTokenAddress = '0xe12349b2E35F6053Ed079E281427fc1F25b3C087'
-
   const txHash = await client.sendTransaction({
-    to: testTokenAddress,
+    to: WEB3PAY_TEST_TOKEN,
     value: 0n,
     data: encodeFunctionData({
       abi: parseAbi(['function mint(address to, uint256 amount)']),

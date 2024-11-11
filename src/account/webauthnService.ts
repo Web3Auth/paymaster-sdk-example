@@ -1,10 +1,11 @@
+import { WEB3PAY_API_URL } from '@/config'
 import { PublicKeyCredentialCreationOptionsJSON } from '@simplewebauthn/typescript-types'
 
 export async function webauthnRegister() {
   const ts = Date.now()
   const username = `user-${ts}`
 
-  const optionsUrl = 'https://lrc-accounts.web3auth.io/api/register/options'
+  const optionsUrl = `${WEB3PAY_API_URL}/register/options`
   const resp = await fetch(optionsUrl, {
     method: 'POST',
     headers: {
@@ -20,7 +21,7 @@ export async function webauthnRegister() {
   const { startRegistration } = await import('@simplewebauthn/browser')
   const cred = await startRegistration({ optionsJSON: options })
 
-  const verifyUrl = 'https://lrc-accounts.web3auth.io/api/register/verify'
+  const verifyUrl = `${WEB3PAY_API_URL}/register/verify`
   const verifyResp = await fetch(verifyUrl, {
     method: 'POST',
     headers: {
