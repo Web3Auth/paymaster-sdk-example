@@ -14,7 +14,7 @@ export default function Home() {
   return (
     <div className="flex flex-col items-center justify-center h-screen gap-4">
       <div className="w-full absolute top-0 left-0 p-4 bg-gray-100">
-        <h1>Web3Auth Paymaster</h1>
+        <h1>Web3Auth Paymaster SDK Example</h1>
       </div>
       {account ? (
         <Wallet account={account.account} type={account.type} webAuthnCredentials={webAuthnCredentials} />
