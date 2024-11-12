@@ -421,17 +421,16 @@ export default function Wallet({
   return (
     <div className="relative flex flex-col items-center justify-center gap-3 border border-gray-300 rounded-md p-6">
       <h1>Wallet</h1>
-      <div className="flex items-center justify-center gap-2">
-        <p className="text-sm bg-gray-100 p-2 rounded-md text-gray-800">{account.address}</p>
+      <div className="flex items-center gap-2 w-full mb-4">
+        <p className="text-xs bg-blue-100 p-1 rounded-md text-gray-800"><b>Source Chain:</b> {SOURCE_CHAIN.name}</p>
+        <p className="text-xs bg-violet-100 p-1 rounded-md text-gray-800"><b>Target Chain:</b> {TARGET_CHAIN.name}</p>
+      </div>
+      <div className="flex items-center justify-between gap-2 w-full">
+        <p className="text-xs bg-gray-100 p-2 rounded-md text-gray-800">Smart Account: <b className="text-sm">{account.address}</b></p>
         <p className="text-sm bg-red-100 p-2 rounded-md text-gray-800">{type}</p>
       </div>
-      {targetOpHash && (
-        <p className="text-xs bg-green-300 p-2 rounded-md mb-4 text-gray-800">
-          Target userOp hash: {targetOpHash}
-        </p>
-      )}
       {isExternalSponsor && (
-        <ExternalSponsor onEoaWalletFunded={onEoaWalletFunded} />
+        <ExternalSponsor onEoaWalletFunded={onEoaWalletFunded} eoaWallet={eoaWallet} />
       )}
       {type === "webauthn" ? (
         <>
@@ -471,6 +470,11 @@ export default function Wallet({
         >
           Send User Operation (with ERC20 Token gas)
         </button>
+      )}
+      {targetOpHash && (
+        <p className="text-xs bg-green-300 p-2 rounded-md my-4 text-gray-800">
+          Target userOp hash: {targetOpHash}
+        </p>
       )}
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100/80 text-sm text-gray-800">

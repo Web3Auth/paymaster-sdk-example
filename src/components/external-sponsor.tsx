@@ -10,10 +10,12 @@ import {
 } from "viem/accounts";
 
 interface ExternalSponsorProps {
+  eoaWallet?: PrivateKeyAccount;
   onEoaWalletFunded: (account: PrivateKeyAccount) => void;
 }
 
 export default function ExternalSponsor({
+  eoaWallet: _existingEoaWallet,
   onEoaWalletFunded,
 }: ExternalSponsorProps) {
   const [loadingText, setLoadingText] = useState(
@@ -22,6 +24,12 @@ export default function ExternalSponsor({
   const [eoaWallet, setEoaWallet] = useState<PrivateKeyAccount>();
 
   useEffect(() => {
+    if (_existingEoaWallet) {
+      setLoadingText("EOA wallet already funded!");
+      setEoaWallet(_existingEoaWallet);
+      return;
+    }
+
     const ac = new AbortController();
     (async () => {
       setLoadingText("Generating random EOA wallet...");
@@ -79,7 +87,7 @@ export default function ExternalSponsor({
     })();
 
     return () => ac.abort();
-  }, [onEoaWalletFunded]);
+  }, [onEoaWalletFunded, _existingEoaWallet]);
 
   return (
     <div className="flex flex-col items-center justify-center gap-3 border border-gray-300 rounded-md p-6">
