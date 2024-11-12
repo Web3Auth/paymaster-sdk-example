@@ -46,7 +46,7 @@ export default function ExternalSponsor({
         });
         if (res.ok) {
           setLoadingText("EOA wallet funded!");
-          // onEoaWalletFunded(account);
+          onEoaWalletFunded(account);
         } else {
           setLoadingText("Failed to fund EOA wallet");
         }
@@ -63,11 +63,11 @@ export default function ExternalSponsor({
   return (
     <div className="flex flex-col items-center justify-center gap-3 border border-gray-300 rounded-md p-6">
       {eoaWallet && (
-        <p className="text-sm bg-gray-100 p-2 rounded-md">
+        <p className="text-sm bg-gray-100 p-2 rounded-md text-gray-800">
           EOA address: {eoaWallet.address}
         </p>
       )}
-      <p className="text-xs">{loadingText}</p>
+      <p className="text-xs text-gray-800 dark:text-gray-200">{loadingText}</p>
     </div>
   );
 }

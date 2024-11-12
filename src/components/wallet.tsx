@@ -61,41 +61,50 @@ export default function Wallet({
   async function sendUserOperation() {
     if (!ecdsaSigner)
       throw new Error('ECDSA signer is required')
+    try {
+      setLoading(true);
+      await fundAccountIfNeeded();
 
-    await fundAccountIfNeeded();
+      const paymaster = new Web3AuthPaymaster({
+        apiKey: process.env.NEXT_PUBLIC_WEB3AUTH_PAYMASTER_API_KEY || "",
+        chains: [{ chainId: SOURCE_CHAIN.id, rpcUrl: SOURCE_CHAIN_RPC_URL }],
+      });
 
-    const paymaster = new Web3AuthPaymaster({
-      apiKey: process.env.NEXT_PUBLIC_WEB3AUTH_PAYMASTER_API_KEY || "",
-      chains: [{ chainId: SOURCE_CHAIN.id, rpcUrl: SOURCE_CHAIN_RPC_URL }],
-    });
+      const client = createSmartAccountClient({
+        account,
+        bundlerTransport: http(SOURCE_CHAIN_RPC_URL),
+      });
+      setLoadingText("Preparing user operation ...");
+      const userOp = (await client.prepareUserOperation({
+        account,
+        callData: await account.encodeCalls([
+          paymaster.core.createTokenApprovalCall(),
+        ]),
+        paymaster: paymaster.core.preparePaymasterData(),
+      })) as SendUserOperationParameters;
+      console.log("userOp", userOp);
 
-    const client = createSmartAccountClient({
-      account,
-      bundlerTransport: http(SOURCE_CHAIN_RPC_URL),
-    });
-    const userOp = (await client.prepareUserOperation({
-      account,
-      callData: await account.encodeCalls([
-        paymaster.core.createTokenApprovalCall(),
-      ]),
-      paymaster: paymaster.core.preparePaymasterData(),
-    })) as SendUserOperationParameters;
-    console.log("userOp", userOp);
+      setLoadingText("Signing user operation ...");
+      const signature = await paymaster.core.signUserOperation({
+        chainId: SOURCE_CHAIN.id,
+        userOperation: userOp as UserOperation<'0.7'>,
+        signMessage: async (rootHash: Hex) => {
+          return ecdsaSigner.signMessage({ message: { raw: rootHash } });
+        },
+      });
+      userOp.signature = signature
 
-    const signature = await paymaster.core.signUserOperation({
-      chainId: SOURCE_CHAIN.id,
-      userOperation: userOp as UserOperation<'0.7'>,
-      signMessage: async (rootHash: Hex) => {
-        return ecdsaSigner.signMessage({ message: { raw: rootHash } });
-      },
-    });
-    userOp.signature = signature
+      setLoadingText("Sending user operation ...");
+      const hash = await client.sendUserOperation({ ...userOp })
+      setLoadingText("Waiting for user operation receipt ...");
+      const { receipt } = await client.waitForUserOperationReceipt({ hash })
 
-    const hash = await client.sendUserOperation({ ...userOp })
-    const { receipt } = await client.waitForUserOperationReceipt({ hash })
-
-    console.log('receipt', receipt.transactionHash)
-    setTargetOpHash(receipt.transactionHash)
+      console.log('receipt', receipt.transactionHash)
+      setTargetOpHash(receipt.transactionHash)
+    } catch (error) {
+      console.error("error", (error as Error).stack);
+      setLoading(false);
+    }
   }
 
   async function prepareTargetOp(paymaster: Web3AuthPaymaster) {
@@ -282,7 +291,8 @@ export default function Wallet({
       setIsExternalSponsor(true);
       return;
     }
-
+    if (loading) return;
+    setLoading(true);
     try {
       const paymaster = new Web3AuthPaymaster({
         apiKey: process.env.NEXT_PUBLIC_WEB3AUTH_PAYMASTER_API_KEY || "",
@@ -292,8 +302,6 @@ export default function Wallet({
         ],
         sponsor: eoaWallet.address,
       });
-
-      setLoading(true);
       const targetOp = await prepareTargetOp(paymaster);
       console.log("partial-targetOp", targetOp);
       const sourceOp = await prepareSourceOp(paymaster);
@@ -349,11 +357,11 @@ export default function Wallet({
     <div className="relative flex flex-col items-center justify-center gap-3 border border-gray-300 rounded-md p-6">
       <h1>Wallet</h1>
       <div className="flex items-center justify-center gap-2">
-        <p className="text-sm bg-gray-100 p-2 rounded-md">{account.address}</p>
-        <p className="text-sm bg-red-100 p-2 rounded-md">{type}</p>
+        <p className="text-sm bg-gray-100 p-2 rounded-md text-gray-800">{account.address}</p>
+        <p className="text-sm bg-red-100 p-2 rounded-md text-gray-800">{type}</p>
       </div>
       {targetOpHash && (
-        <p className="text-xs bg-green-50 p-2 rounded-md mb-4">
+        <p className="text-xs bg-green-300 p-2 rounded-md mb-4 text-gray-800">
           Target userOp hash: {targetOpHash}
         </p>
       )}
@@ -389,7 +397,7 @@ export default function Wallet({
         </button>
       )}
       {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100/80 text-sm">
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100/80 text-sm text-gray-800">
           {loadingText}
         </div>
       )}
