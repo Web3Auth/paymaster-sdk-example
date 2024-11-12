@@ -14,6 +14,7 @@ import {
   Hex,
   http,
   keccak256,
+  LocalAccount,
   maxInt256,
   PrivateKeyAccount,
 } from "viem";
@@ -40,11 +41,13 @@ import { approveAuthPaymasterToSpendToken } from "@/libs/sponsor";
 interface WalletProps {
   account: SmartAccount;
   type: "ecdsa" | "webauthn";
+  ecdsaSigner?: LocalAccount;
   webAuthnCredentials?: WebAuthnCredentials;
 }
 
 export default function Wallet({
   account,
+  ecdsaSigner,
   type,
   webAuthnCredentials,
 }: WalletProps) {
@@ -56,6 +59,11 @@ export default function Wallet({
   const [targetOpHash, setTargetOpHash] = useState<Hex>();
 
   async function sendUserOperation() {
+    if (!ecdsaSigner)
+      throw new Error('ECDSA signer is required')
+
+    await fundAccountIfNeeded();
+
     const paymaster = new Web3AuthPaymaster({
       apiKey: process.env.NEXT_PUBLIC_WEB3AUTH_PAYMASTER_API_KEY || "",
       chains: [{ chainId: SOURCE_CHAIN.id, rpcUrl: SOURCE_CHAIN_RPC_URL }],
@@ -65,14 +73,29 @@ export default function Wallet({
       account,
       bundlerTransport: http(SOURCE_CHAIN_RPC_URL),
     });
-    const preparedUserOp = await client.prepareUserOperation({
+    const userOp = (await client.prepareUserOperation({
       account,
       callData: await account.encodeCalls([
         paymaster.core.createTokenApprovalCall(),
       ]),
       paymaster: paymaster.core.preparePaymasterData(),
+    })) as SendUserOperationParameters;
+    console.log("userOp", userOp);
+
+    const signature = await paymaster.core.signUserOperation({
+      chainId: SOURCE_CHAIN.id,
+      userOperation: userOp as UserOperation<'0.7'>,
+      signMessage: async (rootHash: Hex) => {
+        return ecdsaSigner.signMessage({ message: { raw: rootHash } });
+      },
     });
-    console.log("preparedUserOp", preparedUserOp);
+    userOp.signature = signature
+
+    const hash = await client.sendUserOperation({ ...userOp })
+    const { receipt } = await client.waitForUserOperationReceipt({ hash })
+
+    console.log('receipt', receipt.transactionHash)
+    setTargetOpHash(receipt.transactionHash)
   }
 
   async function prepareTargetOp(paymaster: Web3AuthPaymaster) {
@@ -158,7 +181,7 @@ export default function Wallet({
     return sourceOp;
   }
 
-  async function sendAndTrackUserOperation(
+  async function sendAndTrackMultiChainUserOperation(
     paymaster: Web3AuthPaymaster,
     targetOp: SendUserOperationParameters,
     sourceOp: SendUserOperationParameters
@@ -246,7 +269,7 @@ export default function Wallet({
       sourceOp.signature = sourceUserOpSignature;
       targetOp.signature = partialTargetUserOpSignature;
 
-      await sendAndTrackUserOperation(paymaster, targetOp, sourceOp);
+      await sendAndTrackMultiChainUserOperation(paymaster, targetOp, sourceOp);
       setLoading(false);
     } catch (error) {
       console.error("error", (error as Error).stack);
@@ -308,7 +331,7 @@ export default function Wallet({
         paymaster.core.getPaymasterAddress()
       );
 
-      await sendAndTrackUserOperation(paymaster, targetOp, sourceOp);
+      await sendAndTrackMultiChainUserOperation(paymaster, targetOp, sourceOp);
 
       setLoading(false);
     } catch (error) {
@@ -362,7 +385,7 @@ export default function Wallet({
           onClick={sendUserOperation}
           disabled={loading}
         >
-          Send User Operation
+          Send User Operation (with ERC20 Token gas)
         </button>
       )}
       {loading && (

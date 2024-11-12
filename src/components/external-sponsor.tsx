@@ -1,9 +1,8 @@
 "use client";
 
 import { SOURCE_CHAIN, WEB3PAY_API_URL } from "@/config";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  Address,
   generatePrivateKey,
   PrivateKeyAccount,
   privateKeyToAccount,
@@ -21,41 +20,45 @@ export default function ExternalSponsor({
   );
   const [eoaWallet, setEoaWallet] = useState<PrivateKeyAccount>();
 
-  const fundEoaWallet = useCallback(async (eoaAddress: Address) => {
-    await fetch(`${WEB3PAY_API_URL}/mint`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ chainId: SOURCE_CHAIN.id, toAddress: eoaAddress }),
-    });
-  }, []);
-
   useEffect(() => {
-    let timeout: NodeJS.Timeout;
+    const ac = new AbortController();
     (async () => {
       setLoadingText("Generating random EOA wallet...");
-      timeout = setTimeout(async () => {
-        try {
-          const privateKey = generatePrivateKey();
-          const account = privateKeyToAccount(privateKey);
-          setEoaWallet(account);
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        const privateKey = generatePrivateKey();
+        const account = privateKeyToAccount(privateKey);
+        setEoaWallet(account);
 
-          // funding test token to eoa wallet
-          setLoadingText("Funding test token to EOA wallet...");
+        // funding test token to eoa wallet
+        setLoadingText("Funding test token to EOA wallet...");
 
-          await fundEoaWallet(account.address);
-
+        const res = await fetch(`${WEB3PAY_API_URL}/mint`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          signal: ac.signal,
+          body: JSON.stringify({
+            chainId: SOURCE_CHAIN.id,
+            toAddress: account.address,
+          }),
+        });
+        if (res.ok) {
           setLoadingText("EOA wallet funded!");
-          onEoaWalletFunded(account);
-        } catch (error) {
-          console.error(error);
+          // onEoaWalletFunded(account);
+        } else {
           setLoadingText("Failed to fund EOA wallet");
         }
-      }, 1000);
+      } catch (error) {
+        if (ac.signal.aborted) return;
+        console.error(error);
+        setLoadingText("Failed to fund EOA wallet");
+      }
     })();
-    return () => clearTimeout(timeout);
-  }, [fundEoaWallet, onEoaWalletFunded]);
+
+    return () => ac.abort();
+  }, [onEoaWalletFunded]);
 
   return (
     <div className="flex flex-col items-center justify-center gap-3 border border-gray-300 rounded-md p-6">

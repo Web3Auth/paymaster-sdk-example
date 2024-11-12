@@ -2,7 +2,7 @@
 
 import { getWeb3AuthValidatorAddress, PaymasterVersion, ValidatorType } from '@web3auth/paymaster-sdk'
 import { toEcdsaKernelSmartAccount } from 'permissionless/accounts'
-import { createPublicClient, http, keccak256 } from 'viem'
+import { createPublicClient, http, keccak256, LocalAccount } from 'viem'
 import { SmartAccount } from 'viem/account-abstraction'
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts'
 
@@ -13,7 +13,16 @@ import { WebAuthnCredentials } from '@/account/webauthnSigner'
 import { SOURCE_CHAIN, SOURCE_CHAIN_RPC_URL } from '@/config'
 
 interface MenuProps {
-  onAccountCreated: (address: SmartAccount, type: 'ecdsa' | 'webauthn', webAuthnCredentials?: WebAuthnCredentials) => void
+  onAccountCreated: ({
+    account,
+    type,
+    webAuthnCredentials,
+  }: {
+    account: SmartAccount
+    type: 'ecdsa' | 'webauthn'
+    ecdsaSigner?: LocalAccount
+    webAuthnCredentials?: WebAuthnCredentials
+  }) => void
 }
 
 export default function Menu({ onAccountCreated }: MenuProps) {
@@ -25,7 +34,7 @@ export default function Menu({ onAccountCreated }: MenuProps) {
       transport: http(SOURCE_CHAIN_RPC_URL),
     })
     const account: SmartAccount = await toEcdsaKernelSmartAccount({ client, owners: [owner] })
-    onAccountCreated(account, 'ecdsa')
+    onAccountCreated({ account, type: 'ecdsa', ecdsaSigner: owner })
   }
 
   async function createWebAuthnAccount() {
@@ -41,7 +50,6 @@ export default function Menu({ onAccountCreated }: MenuProps) {
 
     // get validator address from Paymaster SDK
     const validatorAddress = getWeb3AuthValidatorAddress(SOURCE_CHAIN.id, PaymasterVersion.V0_2_0, ValidatorType.WEB_AUTHN)
-    console.log('validatorAddress', validatorAddress)
     const account = await toWebAuthnKernelSmartAccount({
       client,
       webAuthnKey: {
@@ -52,7 +60,7 @@ export default function Menu({ onAccountCreated }: MenuProps) {
       validatorAddress,
     })
     console.log('account', account)
-    onAccountCreated(account, 'webauthn', { authenticatorId, publicKey })
+    onAccountCreated({ account, type: 'webauthn', webAuthnCredentials: { authenticatorId, publicKey } })
   }
 
   return (

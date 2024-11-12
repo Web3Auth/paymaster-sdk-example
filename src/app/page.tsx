@@ -6,8 +6,10 @@ import { SmartAccount } from 'viem/account-abstraction'
 import { WebAuthnCredentials } from '@/account/webauthnSigner'
 import Menu from '@/components/menu'
 import Wallet from '@/components/wallet'
+import { LocalAccount } from 'viem/accounts'
 
 export default function Home() {
+  const [ecdsaSigner, setEcdsaSigner] = useState<LocalAccount>()
   const [account, setAccount] = useState<{ account: SmartAccount; type: 'ecdsa' | 'webauthn' }>()
   const [webAuthnCredentials, setWebAuthnCredentials] = useState<WebAuthnCredentials>()
 
@@ -17,12 +19,13 @@ export default function Home() {
         <h1>Web3Auth Paymaster SDK Example</h1>
       </div>
       {account ? (
-        <Wallet account={account.account} type={account.type} webAuthnCredentials={webAuthnCredentials} />
+        <Wallet account={account.account} type={account.type} webAuthnCredentials={webAuthnCredentials} ecdsaSigner={ecdsaSigner} />
       ) : (
         <Menu
-          onAccountCreated={(account, type, webAuthnCredentials) => {
+          onAccountCreated={({ account, type, webAuthnCredentials, ecdsaSigner }) => {
             setAccount({ account, type })
             setWebAuthnCredentials(webAuthnCredentials)
+            setEcdsaSigner(ecdsaSigner)
           }}
         />
       )}
