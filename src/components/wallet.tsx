@@ -9,6 +9,7 @@ import {
 import { createSmartAccountClient } from "permissionless/clients";
 import { useCallback, useState } from "react";
 import {
+  Chain,
   createPublicClient,
   createWalletClient,
   Hex,
@@ -37,6 +38,7 @@ import {
 } from "@/config";
 import ExternalSponsor from "./external-sponsor";
 import { approveAuthPaymasterToSpendToken } from "@/libs/sponsor";
+import { waitForTransactionReceipt } from "viem/actions";
 
 interface WalletProps {
   account: SmartAccount;
@@ -108,20 +110,24 @@ export default function Wallet({
     }
   }
 
-  async function prepareTargetOp(paymaster: Web3AuthPaymaster) {
+  async function prepareTargetOp(paymaster: Web3AuthPaymaster, chain?: Chain, rpcUrl?: string) {
     if (!webAuthnCredentials)
       throw new Error("WebAuthn credentials are required");
+
+    const targetChain = chain || TARGET_CHAIN;
+    const targetRpcUrl = rpcUrl || TARGET_CHAIN_RPC_URL;
+
     setLoadingText("Preparing target user operation ...");
     // get validator address from Paymaster SDK
     const validatorAddress = getWeb3AuthValidatorAddress(
-      TARGET_CHAIN.id,
+      targetChain.id,
       PaymasterVersion.V0_2_0,
       ValidatorType.WEB_AUTHN
     );
     const targetAccount = await toWebAuthnKernelSmartAccount({
       client: createPublicClient({
-        chain: TARGET_CHAIN,
-        transport: http(TARGET_CHAIN_RPC_URL),
+        chain: targetChain,
+        transport: http(targetRpcUrl),
       }),
       webAuthnKey: {
         publicKey: webAuthnCredentials.publicKey,
@@ -135,16 +141,16 @@ export default function Wallet({
 
     const targetAccountClient = createSmartAccountClient({
       account: targetAccount,
-      bundlerTransport: http(TARGET_CHAIN_RPC_URL),
+      bundlerTransport: http(targetRpcUrl),
     });
     const targetUserOp = (await targetAccountClient.prepareUserOperation({
       account: targetAccount,
       parameters: ["factory", "fees", "paymaster", "nonce", "signature"],
       callData: await targetAccount.encodeCalls([
-        paymaster.core.createTestTokenMintCall({ chainId: TARGET_CHAIN.id }),
+        paymaster.core.createTestTokenMintCall({ chainId: targetChain.id }),
       ]),
       paymaster: paymaster.core.preparePaymasterData({
-        chainId: TARGET_CHAIN.id,
+        chainId: targetChain.id,
       }),
     })) as SendUserOperationParameters;
 
@@ -349,6 +355,64 @@ export default function Wallet({
     }
   }
 
+  async function sendUserOperationWithEoaSponsorSingleChain() {
+    if (!eoaWallet || loading) return;
+    setLoading(true);
+    try {
+      const paymaster = new Web3AuthPaymaster({
+        apiKey: process.env.NEXT_PUBLIC_WEB3AUTH_PAYMASTER_API_KEY || "",
+        chains: [
+          { chainId: SOURCE_CHAIN.id, rpcUrl: SOURCE_CHAIN_RPC_URL },
+        ],
+        sponsor: eoaWallet.address,
+      });
+      const userOp = await prepareTargetOp(paymaster, SOURCE_CHAIN, SOURCE_CHAIN_RPC_URL);
+
+      const signature = await paymaster.core.signUserOperation({
+        chainId: SOURCE_CHAIN.id,
+        userOperation: userOp as UserOperation<'0.7'>,
+        signMessage: async (rootHash: Hex) => {
+          return account.signMessage({ message: { raw: rootHash } })
+        },
+        signMessageWithSponsor: async (hash: Hex) => {
+          return eoaWallet.signMessage({ message: { raw: hash } })
+        },
+      })
+      userOp.signature = signature
+      console.log(userOp)
+
+      const tokenApprovalCall = paymaster.core.createTokenApprovalCall({ chainId: SOURCE_CHAIN.id })
+      const sponsorWalletClient = createWalletClient({
+        account: eoaWallet,
+        chain: SOURCE_CHAIN,
+        transport: http(SOURCE_CHAIN_RPC_URL),
+      })
+      const approvalHash = await sponsorWalletClient.sendTransaction(tokenApprovalCall)
+      const approvalReceipt = await waitForTransactionReceipt(sponsorWalletClient, { hash: approvalHash })
+      console.log('approvalReceipt', approvalReceipt)
+      if (approvalReceipt.status !== 'success') {
+        throw new Error('Failed to approve paymaster to spend token')
+      }
+
+      setLoadingText("Sending user operation ...");
+      const accountClient = createSmartAccountClient({
+        account,
+        chain: SOURCE_CHAIN,
+        bundlerTransport: http(SOURCE_CHAIN_RPC_URL),
+      })
+      const hash = await accountClient.sendUserOperation({ ...userOp })
+      setLoadingText("Waiting for user operation receipt ...");
+      const { receipt } = await accountClient.waitForUserOperationReceipt({ hash })
+
+      console.log('receipt', receipt.transactionHash)
+      setTargetOpHash(receipt.transactionHash)
+    } catch (error) {
+      console.error("error", (error as Error).stack);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const onEoaWalletFunded = useCallback((account: PrivateKeyAccount) => {
     setIsExternalSponsor(true);
     setEoaWallet(account);
@@ -376,7 +440,7 @@ export default function Wallet({
             onClick={sendUserOperationWithCrosschainSponsor}
             disabled={loading}
           >
-            Send User Operation with Crosschain Sponsor
+            Send User Operation with ERC20 Token Sponsor (Multi-chain)
           </button>
           <button
             className="bg-blue-500 p-2 rounded-md text-sm w-full"
@@ -384,9 +448,20 @@ export default function Wallet({
             disabled={loading}
           >
             {eoaWallet
-              ? "Send User Operation with EOA Sponsor"
+              ? "Send User Operation with EOA Sponsor (Multi-chain)"
               : "Generate EOA Wallet for Sponsorship"}
           </button>
+          {
+            eoaWallet && (
+              <button
+                className="bg-blue-500 p-2 rounded-md text-sm w-full"
+                onClick={sendUserOperationWithEoaSponsorSingleChain}
+                disabled={loading}
+              >
+                Send User Operation with EOA Sponsor (Single-chain)
+              </button>
+            )
+          }
         </>
       ) : (
         <button

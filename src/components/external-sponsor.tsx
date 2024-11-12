@@ -1,7 +1,8 @@
 "use client";
 
-import { SOURCE_CHAIN, WEB3PAY_API_URL } from "@/config";
+import { SOURCE_CHAIN, SOURCE_CHAIN_RPC_URL, WEB3PAY_API_URL, WEB3PAY_TEST_TOKEN } from "@/config";
 import { useEffect, useState } from "react";
+import { createWalletClient, erc20Abi, getContract, http } from "viem";
 import {
   generatePrivateKey,
   PrivateKeyAccount,
@@ -29,6 +30,26 @@ export default function ExternalSponsor({
         const privateKey = generatePrivateKey();
         const account = privateKeyToAccount(privateKey);
         setEoaWallet(account);
+
+        const walletClient = createWalletClient({
+          account,
+          chain: SOURCE_CHAIN,
+          transport: http(SOURCE_CHAIN_RPC_URL),
+        });
+
+        const w3pToken = getContract({
+          address: WEB3PAY_TEST_TOKEN,
+          abi: erc20Abi,
+          client: walletClient,
+        });
+
+        const balance = await w3pToken.read.balanceOf([account.address]);
+        console.log("balance", balance);
+        if (balance > 10n) {
+          setLoadingText("EOA wallet already funded!");
+          onEoaWalletFunded(account);
+          return;
+        }
 
         // funding test token to eoa wallet
         setLoadingText("Funding test token to EOA wallet...");
