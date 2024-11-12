@@ -103,6 +103,7 @@ export default function Wallet({
       setTargetOpHash(receipt.transactionHash)
     } catch (error) {
       console.error("error", (error as Error).stack);
+    } finally {
       setLoading(false);
     }
   }
