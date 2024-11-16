@@ -61,8 +61,7 @@ export default function Wallet({
   const [targetOpHash, setTargetOpHash] = useState<Hex>();
 
   async function sendUserOperation() {
-    if (!ecdsaSigner)
-      throw new Error('ECDSA signer is required')
+    if (!ecdsaSigner) throw new Error("ECDSA signer is required");
     try {
       setLoading(true);
       await fundAccountIfNeeded();
@@ -89,20 +88,20 @@ export default function Wallet({
       setLoadingText("Signing user operation ...");
       const signature = await paymaster.core.signUserOperation({
         chainId: SOURCE_CHAIN.id,
-        userOperation: userOp as UserOperation<'0.7'>,
+        userOperation: userOp as UserOperation<"0.7">,
         signMessage: async (rootHash: Hex) => {
           return ecdsaSigner.signMessage({ message: { raw: rootHash } });
         },
       });
-      userOp.signature = signature
+      userOp.signature = signature;
 
       setLoadingText("Sending user operation ...");
-      const hash = await client.sendUserOperation({ ...userOp })
+      const hash = await client.sendUserOperation({ ...userOp });
       setLoadingText("Waiting for user operation receipt ...");
-      const { receipt } = await client.waitForUserOperationReceipt({ hash })
+      const { receipt } = await client.waitForUserOperationReceipt({ hash });
 
-      console.log('receipt', receipt.transactionHash)
-      setTargetOpHash(receipt.transactionHash)
+      console.log("receipt", receipt.transactionHash);
+      setTargetOpHash(receipt.transactionHash);
     } catch (error) {
       console.error("error", (error as Error).stack);
     } finally {
@@ -110,7 +109,11 @@ export default function Wallet({
     }
   }
 
-  async function prepareTargetOp(paymaster: Web3AuthPaymaster, chain?: Chain, rpcUrl?: string) {
+  async function prepareTargetOp(
+    paymaster: Web3AuthPaymaster,
+    chain?: Chain,
+    rpcUrl?: string
+  ) {
     if (!webAuthnCredentials)
       throw new Error("WebAuthn credentials are required");
 
@@ -165,19 +168,15 @@ export default function Wallet({
     });
 
     let callData: Hex;
-    let sponsorPrefundCallForSimulation: Hex | undefined;
     if (eoaWallet) {
-      const { simulationCallData, prefundCallData } =
-        await paymaster.core.createPrefundCallForSponsor({
-          chainId: SOURCE_CHAIN.id,
-          signPrefundCallWithSponsor: async (message: Hex) => {
-            return eoaWallet.signMessage({ message: { raw: message } });
-          },
-        });
+      const prefundCallData = await paymaster.core.createPrefundCallForSponsor({
+        account,
+        chainId: SOURCE_CHAIN.id,
+        signPrefundCallWithSponsor: async (message: Hex) => {
+          return eoaWallet.signMessage({ message: { raw: message } });
+        },
+      });
       callData = await account.encodeCalls([prefundCallData]);
-      sponsorPrefundCallForSimulation = await account.encodeCalls([
-        simulationCallData,
-      ]);
     } else {
       callData = await account.encodeCalls([
         paymaster.core.createTokenApprovalCall({ chainId: SOURCE_CHAIN.id }),
@@ -191,7 +190,6 @@ export default function Wallet({
       callData,
       paymaster: paymaster.core.preparePaymasterData({
         chainId: SOURCE_CHAIN.id,
-        sponsorPrefundCallForSimulation,
       }),
     })) as SendUserOperationParameters;
     return sourceOp;
@@ -361,37 +359,46 @@ export default function Wallet({
     try {
       const paymaster = new Web3AuthPaymaster({
         apiKey: process.env.NEXT_PUBLIC_WEB3AUTH_PAYMASTER_API_KEY || "",
-        chains: [
-          { chainId: SOURCE_CHAIN.id, rpcUrl: SOURCE_CHAIN_RPC_URL },
-        ],
+        chains: [{ chainId: SOURCE_CHAIN.id, rpcUrl: SOURCE_CHAIN_RPC_URL }],
         sponsor: eoaWallet.address,
       });
-      const userOp = await prepareTargetOp(paymaster, SOURCE_CHAIN, SOURCE_CHAIN_RPC_URL);
+      const userOp = await prepareTargetOp(
+        paymaster,
+        SOURCE_CHAIN,
+        SOURCE_CHAIN_RPC_URL
+      );
 
       const signature = await paymaster.core.signUserOperation({
         chainId: SOURCE_CHAIN.id,
-        userOperation: userOp as UserOperation<'0.7'>,
+        userOperation: userOp as UserOperation<"0.7">,
         signMessage: async (rootHash: Hex) => {
-          return account.signMessage({ message: { raw: rootHash } })
+          return account.signMessage({ message: { raw: rootHash } });
         },
         signMessageWithSponsor: async (hash: Hex) => {
-          return eoaWallet.signMessage({ message: { raw: hash } })
+          return eoaWallet.signMessage({ message: { raw: hash } });
         },
-      })
-      userOp.signature = signature
-      console.log(userOp)
+      });
+      userOp.signature = signature;
+      console.log(userOp);
 
-      const tokenApprovalCall = paymaster.core.createTokenApprovalCall({ chainId: SOURCE_CHAIN.id })
+      const tokenApprovalCall = paymaster.core.createTokenApprovalCall({
+        chainId: SOURCE_CHAIN.id,
+      });
       const sponsorWalletClient = createWalletClient({
         account: eoaWallet,
         chain: SOURCE_CHAIN,
         transport: http(SOURCE_CHAIN_RPC_URL),
-      })
-      const approvalHash = await sponsorWalletClient.sendTransaction(tokenApprovalCall)
-      const approvalReceipt = await waitForTransactionReceipt(sponsorWalletClient, { hash: approvalHash })
-      console.log('approvalReceipt', approvalReceipt)
-      if (approvalReceipt.status !== 'success') {
-        throw new Error('Failed to approve paymaster to spend token')
+      });
+      const approvalHash = await sponsorWalletClient.sendTransaction(
+        tokenApprovalCall
+      );
+      const approvalReceipt = await waitForTransactionReceipt(
+        sponsorWalletClient,
+        { hash: approvalHash }
+      );
+      console.log("approvalReceipt", approvalReceipt);
+      if (approvalReceipt.status !== "success") {
+        throw new Error("Failed to approve paymaster to spend token");
       }
 
       setLoadingText("Sending user operation ...");
@@ -399,13 +406,15 @@ export default function Wallet({
         account,
         chain: SOURCE_CHAIN,
         bundlerTransport: http(SOURCE_CHAIN_RPC_URL),
-      })
-      const hash = await accountClient.sendUserOperation({ ...userOp })
+      });
+      const hash = await accountClient.sendUserOperation({ ...userOp });
       setLoadingText("Waiting for user operation receipt ...");
-      const { receipt } = await accountClient.waitForUserOperationReceipt({ hash })
+      const { receipt } = await accountClient.waitForUserOperationReceipt({
+        hash,
+      });
 
-      console.log('receipt', receipt.transactionHash)
-      setTargetOpHash(receipt.transactionHash)
+      console.log("receipt", receipt.transactionHash);
+      setTargetOpHash(receipt.transactionHash);
     } catch (error) {
       console.error("error", (error as Error).stack);
     } finally {
@@ -422,15 +431,26 @@ export default function Wallet({
     <div className="relative flex flex-col items-center justify-center gap-3 border border-gray-300 rounded-md p-6">
       <h1>Wallet</h1>
       <div className="flex items-center gap-2 w-full mb-4">
-        <p className="text-xs bg-blue-100 p-1 rounded-md text-gray-800"><b>Source Chain:</b> {SOURCE_CHAIN.name}</p>
-        <p className="text-xs bg-violet-100 p-1 rounded-md text-gray-800"><b>Target Chain:</b> {TARGET_CHAIN.name}</p>
+        <p className="text-xs bg-blue-100 p-1 rounded-md text-gray-800">
+          <b>Source Chain:</b> {SOURCE_CHAIN.name}
+        </p>
+        <p className="text-xs bg-violet-100 p-1 rounded-md text-gray-800">
+          <b>Target Chain:</b> {TARGET_CHAIN.name}
+        </p>
       </div>
       <div className="flex items-center justify-between gap-2 w-full">
-        <p className="text-xs bg-gray-100 p-2 rounded-md text-gray-800">Smart Account: <b className="text-sm">{account.address}</b></p>
-        <p className="text-sm bg-red-100 p-2 rounded-md text-gray-800">{type}</p>
+        <p className="text-xs bg-gray-100 p-2 rounded-md text-gray-800">
+          Smart Account: <b className="text-sm">{account.address}</b>
+        </p>
+        <p className="text-sm bg-red-100 p-2 rounded-md text-gray-800">
+          {type}
+        </p>
       </div>
       {isExternalSponsor && (
-        <ExternalSponsor onEoaWalletFunded={onEoaWalletFunded} eoaWallet={eoaWallet} />
+        <ExternalSponsor
+          onEoaWalletFunded={onEoaWalletFunded}
+          eoaWallet={eoaWallet}
+        />
       )}
       {type === "webauthn" ? (
         <>
@@ -450,17 +470,15 @@ export default function Wallet({
               ? "Send User Operation with EOA Sponsor (Multi-chain)"
               : "Generate EOA Wallet for Sponsorship"}
           </button>
-          {
-            eoaWallet && (
-              <button
-                className="bg-blue-500 p-2 rounded-md text-sm w-full"
-                onClick={sendUserOperationWithEoaSponsorSingleChain}
-                disabled={loading}
-              >
-                Send User Operation with EOA Sponsor (Single-chain)
-              </button>
-            )
-          }
+          {eoaWallet && (
+            <button
+              className="bg-blue-500 p-2 rounded-md text-sm w-full"
+              onClick={sendUserOperationWithEoaSponsorSingleChain}
+              disabled={loading}
+            >
+              Send User Operation with EOA Sponsor (Single-chain)
+            </button>
+          )}
         </>
       ) : (
         <button
