@@ -3,13 +3,17 @@ import { getAccountNonce, getSenderAddress } from 'permissionless/actions'
 import { encode7579Calls } from 'permissionless/utils'
 import {
   Address,
+  Chain,
   concat,
   concatHex,
+  createPublicClient,
   encodeAbiParameters,
   encodeFunctionData,
   getTypesForEIP712Domain,
   hashTypedData,
   Hex,
+  http,
+  keccak256,
   maxUint16,
   pad,
   parseAbi,
@@ -31,7 +35,9 @@ import {
 } from 'viem/account-abstraction'
 
 import { Call, CallType, WebAuthnKey } from './types'
-import { parseXandYfromPublicKey, toWebAuthnSigner } from './webauthnSigner'
+import { parseXandYfromPublicKey, toWebAuthnSigner, WebAuthnCredentials } from './webauthnSigner'
+import { createSmartAccountClient } from 'permissionless'
+import { b64ToBytes } from './utils'
 
 export interface ToWebAuthnKernelSmartAccountParameters extends Omit<ToEcdsaKernelSmartAccountParameters<'0.7', '0.3.0-beta'>, 'owners'> {
   webAuthnKey: WebAuthnKey
@@ -109,7 +115,6 @@ export const toWebAuthnKernelSmartAccount = async (parameters: ToWebAuthnKernelS
   }
 
   const signMessage = async (message: SignableMessage) => {
-    console.log('account::signMessage', message)
     const webAuthnSigner = await toWebAuthnSigner(
       client,
       {
@@ -143,7 +148,7 @@ export const toWebAuthnKernelSmartAccount = async (parameters: ToWebAuthnKernelS
       chainId: client.chain?.id as number,
     })
 
-    const signature: Hex = await signMessage(hash)
+    const signature: Hex = await signMessage({ raw: hash })
     return signature
   }
 
@@ -246,4 +251,28 @@ export const toWebAuthnKernelSmartAccount = async (parameters: ToWebAuthnKernelS
       return signUserOperation(userOperation)
     },
   }
+}
+
+export const createWebAuthnKernelSmartAccountClient = async (chain: Chain, rpcUrl: string, webAuthnCredentials: WebAuthnCredentials, validatorAddress: Address) => {
+  const targetAccount = await toWebAuthnKernelSmartAccount({
+    client: createPublicClient({
+      chain,
+      transport: http(rpcUrl),
+    }),
+    webAuthnKey: {
+      publicKey: webAuthnCredentials.publicKey,
+      authenticatorId: webAuthnCredentials.authenticatorId,
+      authenticatorIdHash: keccak256(
+        b64ToBytes(webAuthnCredentials.authenticatorId)
+      ),
+    },
+    validatorAddress,
+  });
+
+  const targetAccountClient = createSmartAccountClient({
+    account: targetAccount,
+    bundlerTransport: http(rpcUrl),
+  });
+
+  return targetAccountClient;
 }
