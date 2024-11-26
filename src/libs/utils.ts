@@ -47,6 +47,20 @@ export const approveAuthPaymasterToSpendToken = async (
   }
 };
 
+export const createTestTokenTransfer = async (account: SmartAccount, paymasterAddress: Address) => {
+
+  return account.encodeCalls([
+    {
+      to: WEB3PAY_TEST_TOKEN,
+      data: encodeFunctionData({
+        abi: parseAbi(['function transfer(address to, uint256 amount)']),
+        functionName: 'transfer',
+        args: [paymasterAddress, 1n],
+      }),
+    },
+  ])
+}
+
 export const createMintNftCallData = (account: SmartAccount, recipient: Hex) => {
   return account.encodeCalls([
     {

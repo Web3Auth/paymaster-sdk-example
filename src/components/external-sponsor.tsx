@@ -79,10 +79,10 @@ export default function ExternalSponsor({
         if (res.ok) {
           setLoadingText("EOA wallet funded!");
           setIsFunded(true);
-          onEoaWalletFunded(account);
         } else {
           setLoadingText("Failed to fund EOA wallet");
         }
+        onEoaWalletFunded(account);
       } catch (error) {
         if (ac.signal.aborted) return;
         console.error(error);

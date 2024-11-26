@@ -11,6 +11,7 @@ import { WebAuthnCredentials } from "@/account/webauthnSigner";
 import { SOURCE_CHAIN, SOURCE_CHAIN_RPC_URL, TARGET_CHAIN } from "@/config";
 import ExternalSponsor from "./external-sponsor";
 import WebAuthnActions from "./webauthn";
+import { createTestTokenTransfer } from "@/libs/utils";
 
 interface WalletProps {
   account: SmartAccount;
@@ -34,6 +35,7 @@ export default function Wallet({ account, type, webAuthnCredentials }: WalletPro
         apiKey: process.env.NEXT_PUBLIC_WEB3AUTH_PAYMASTER_API_KEY || "",
         chains: [{ chainId: SOURCE_CHAIN.id, rpcUrl: SOURCE_CHAIN_RPC_URL }],
       });
+      const paymasterAddress = paymaster.core.getPaymasterAddress()
 
       const accountClient = createSmartAccountClient({
         account,
@@ -44,7 +46,7 @@ export default function Wallet({ account, type, webAuthnCredentials }: WalletPro
         chainId: SOURCE_CHAIN.id,
         accountClient,
         userOperation: {
-          callData: "0x",
+          callData: await createTestTokenTransfer(account, paymasterAddress),
         },
       });
   
