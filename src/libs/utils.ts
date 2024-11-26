@@ -2,14 +2,18 @@ import {
   Account,
   Address,
   Chain,
+  encodeFunctionData,
   erc20Abi,
   getContract,
+  Hex,
   maxInt256,
+  parseAbi,
   Transport,
   WalletClient,
 } from "viem";
-import { WEB3PAY_TEST_TOKEN } from "@/config";
+import { WEB3AUTH_NFT_ADDRESS, WEB3PAY_TEST_TOKEN } from "@/config";
 import { waitForTransactionReceipt } from "viem/actions";
+import { SmartAccount } from "viem/account-abstraction";
 
 export const approveAuthPaymasterToSpendToken = async (
   walletClient: WalletClient<Transport, Chain, Account>,
@@ -42,3 +46,30 @@ export const approveAuthPaymasterToSpendToken = async (
     throw new Error("Failed to approve auth paymaster to spend token");
   }
 };
+
+export const createTestTokenTransfer = async (account: SmartAccount, paymasterAddress: Address) => {
+
+  return account.encodeCalls([
+    {
+      to: WEB3PAY_TEST_TOKEN,
+      data: encodeFunctionData({
+        abi: parseAbi(['function transfer(address to, uint256 amount)']),
+        functionName: 'transfer',
+        args: [paymasterAddress, 1n],
+      }),
+    },
+  ])
+}
+
+export const createMintNftCallData = (account: SmartAccount, recipient: Hex) => {
+  return account.encodeCalls([
+    {
+      to: WEB3AUTH_NFT_ADDRESS,
+      data: encodeFunctionData({
+        abi: parseAbi(['function mint(address to)']),
+        functionName: 'mint',
+        args: [recipient],
+      }),
+    },
+  ])
+}

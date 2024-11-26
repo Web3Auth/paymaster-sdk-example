@@ -22,6 +22,7 @@ export default function ExternalSponsor({
     "Generating random EOA wallet..."
   );
   const [eoaWallet, setEoaWallet] = useState<PrivateKeyAccount>();
+  const [isFunded, setIsFunded] = useState(false);
 
   useEffect(() => {
     if (_existingEoaWallet) {
@@ -29,6 +30,8 @@ export default function ExternalSponsor({
       setEoaWallet(_existingEoaWallet);
       return;
     }
+
+    if (isFunded && eoaWallet) return;
 
     const ac = new AbortController();
     (async () => {
@@ -75,10 +78,11 @@ export default function ExternalSponsor({
         });
         if (res.ok) {
           setLoadingText("EOA wallet funded!");
-          onEoaWalletFunded(account);
+          setIsFunded(true);
         } else {
           setLoadingText("Failed to fund EOA wallet");
         }
+        onEoaWalletFunded(account);
       } catch (error) {
         if (ac.signal.aborted) return;
         console.error(error);
