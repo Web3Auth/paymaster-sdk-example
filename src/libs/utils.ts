@@ -13,7 +13,6 @@ import {
 } from "viem";
 import { WEB3AUTH_NFT_ADDRESS, WEB3PAY_TEST_TOKEN } from "@/config";
 import { waitForTransactionReceipt } from "viem/actions";
-import { SmartAccount } from "viem/account-abstraction";
 
 export const approveAuthPaymasterToSpendToken = async (
   walletClient: WalletClient<Transport, Chain, Account>,
@@ -47,29 +46,25 @@ export const approveAuthPaymasterToSpendToken = async (
   }
 };
 
-export const createTestTokenTransfer = async (account: SmartAccount, paymasterAddress: Address) => {
-
-  return account.encodeCalls([
-    {
-      to: WEB3PAY_TEST_TOKEN,
-      data: encodeFunctionData({
-        abi: parseAbi(['function transfer(address to, uint256 amount)']),
-        functionName: 'transfer',
-        args: [paymasterAddress, 1n],
-      }),
-    },
-  ])
+export const createTestTokenTransfer = (paymasterAddress: Address) => {
+  return {
+    to: WEB3PAY_TEST_TOKEN as Address,
+    value: 0n,
+    data: encodeFunctionData({
+      abi: parseAbi(['function transfer(address to, uint256 amount)']),
+      functionName: 'transfer',
+      args: [paymasterAddress, 1n],
+    }),
+  }
 }
 
-export const createMintNftCallData = (account: SmartAccount, recipient: Hex) => {
-  return account.encodeCalls([
-    {
-      to: WEB3AUTH_NFT_ADDRESS,
-      data: encodeFunctionData({
-        abi: parseAbi(['function mint(address to)']),
-        functionName: 'mint',
-        args: [recipient],
-      }),
-    },
-  ])
+export const createMintNftCallData = (recipient: Hex) => {
+  return {
+    to: WEB3AUTH_NFT_ADDRESS as Address,
+    data: encodeFunctionData({
+      abi: parseAbi(['function mint(address to)']),
+      functionName: 'mint',
+      args: [recipient],
+    }),
+  }
 }

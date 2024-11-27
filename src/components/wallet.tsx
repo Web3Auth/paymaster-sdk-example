@@ -1,6 +1,6 @@
 "use client";
 
-import { Web3AuthPaymaster } from "@web3auth/paymaster-sdk";
+import { getSupportedFeeTokens, Web3AuthPaymaster } from "@web3auth/paymaster-sdk";
 import { createSmartAccountClient } from "permissionless/clients";
 import { useCallback, useState } from "react";
 import { Hex, http, PrivateKeyAccount } from "viem";
@@ -45,10 +45,9 @@ export default function Wallet({ account, type, webAuthnCredentials }: WalletPro
       const userOperation = await paymaster.core.prepareUserOperation({
         chainId: SOURCE_CHAIN.id,
         accountClient,
-        userOperation: {
-          callData: await createTestTokenTransfer(account, paymasterAddress),
-        },
-      });
+        calls: [createTestTokenTransfer(paymasterAddress)],
+        feeToken: getSupportedFeeTokens(SOURCE_CHAIN.id)[0],
+      })
   
       setLoadingText("Sending user operation ...");
       const hash = await accountClient.sendUserOperation({

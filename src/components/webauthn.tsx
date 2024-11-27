@@ -4,7 +4,7 @@ import { WebAuthnCredentials } from "@/account/webauthnSigner";
 import { SOURCE_CHAIN_RPC_URL, TARGET_CHAIN_RPC_URL, TARGET_CHAIN, WEB3PAY_TEST_TOKEN } from "@/config";
 import { SOURCE_CHAIN } from "@/config";
 import { createMintNftCallData, createTestTokenTransfer } from "@/libs/utils";
-import { getWeb3AuthValidatorAddress, PaymasterVersion, ValidatorType, Web3AuthPaymaster } from "@web3auth/paymaster-sdk";
+import { getWeb3AuthValidatorAddress, PaymasterVersion, ValidatorType, Web3AuthPaymaster, getSupportedFeeTokens } from "@web3auth/paymaster-sdk";
 import { createSmartAccountClient } from "permissionless";
 import { useState } from "react";
 import { http, PrivateKeyAccount, encodeFunctionData, erc20Abi, createWalletClient, parseUnits } from "viem";
@@ -50,9 +50,8 @@ export default function WebAuthnActions({ account, sponsor, webAuthnCredentials 
     const userOperation = await paymaster.core.prepareUserOperation({
       chainId: SOURCE_CHAIN.id,
       accountClient,
-      userOperation: {
-        callData: await createTestTokenTransfer(account, paymasterAddress),
-      },
+      calls: [createTestTokenTransfer(paymasterAddress)],
+      feeToken: getSupportedFeeTokens(SOURCE_CHAIN.id)[0],
     });
     setLoadingText("Sending user operation...");
     const hash = await accountClient.sendUserOperation({
@@ -85,9 +84,8 @@ export default function WebAuthnActions({ account, sponsor, webAuthnCredentials 
     const userOperation = await paymaster.core.prepareUserOperation({
       chainId: SOURCE_CHAIN.id,
       accountClient,
-      userOperation: {
-        callData: await createTestTokenTransfer(account, paymasterAddress),
-      },
+      calls: [createTestTokenTransfer(paymasterAddress)],
+      feeToken: getSupportedFeeTokens(SOURCE_CHAIN.id)[0],
     })
     
     const hash = await accountClient.sendUserOperation({
@@ -138,11 +136,10 @@ export default function WebAuthnActions({ account, sponsor, webAuthnCredentials 
       // feeToken
       sourceAccountClient,
       targetAccountClient,
-      userOperation: {
-        callData: await createMintNftCallData(targetAccountClient.account, account.address),
-      },
+      calls: [createMintNftCallData(targetAccountClient.account.address)],
       sourceChainId: SOURCE_CHAIN.id,
       targetChainId: TARGET_CHAIN.id,
+      feeToken: getSupportedFeeTokens(TARGET_CHAIN.id)[0],
     })
     setLoadingText("Sending user operation...");
     const sourceHash = await sourceAccountClient.sendUserOperation({ ...sourceUserOp, account: sourceAccountClient.account })
@@ -181,11 +178,10 @@ export default function WebAuthnActions({ account, sponsor, webAuthnCredentials 
     const { sourceUserOp, targetUserOp, estimatedGasFeesOnTargetChain } = await paymaster.core.prepareMultiChainUserOperation({
         sourceAccountClient,
         targetAccountClient,
-        userOperation: {
-          callData: await createMintNftCallData(targetAccountClient.account, account.address),
-        },
+        calls: [createMintNftCallData(targetAccountClient.account.address)],
         sourceChainId: SOURCE_CHAIN.id,
         targetChainId: TARGET_CHAIN.id,
+        feeToken: getSupportedFeeTokens(TARGET_CHAIN.id)[0],
       })
     console.log("estimatedGasFeesOnTargetChain", estimatedGasFeesOnTargetChain);
     setLoadingText("Sending user operation...");
@@ -220,28 +216,27 @@ export default function WebAuthnActions({ account, sponsor, webAuthnCredentials 
       ],
     });
     const transferAmount = parseUnits('10', 6)
-    const targetCallData = await targetAccountClient.account.encodeCalls([
-      {
-        to: WEB3PAY_TEST_TOKEN,
-        value: 0n,
-        data: encodeFunctionData({
-          abi: erc20Abi,
-          functionName: 'transfer',
-          args: [targetAccountClient.account.address, transferAmount],
-        }),
-      },
-    ])
+
     setLoadingText("Preparing user operation...");
     const { sourceUserOp, targetUserOp } =
       await paymaster.core.prepareMultiChainUserOperation({
         sourceAccountClient,
         targetAccountClient,
-        userOperation: {
-          callData: targetCallData,
-        },
+        calls: [
+          {
+            to: WEB3PAY_TEST_TOKEN,
+            value: 0n,
+            data: encodeFunctionData({
+              abi: erc20Abi,
+              functionName: 'transfer',
+              args: [targetAccountClient.account.address, transferAmount],
+            }),
+          },
+        ],
         sourceChainId: SOURCE_CHAIN.id,
         targetChainId: TARGET_CHAIN.id,
         targetAmount: transferAmount,
+        feeToken: getSupportedFeeTokens(TARGET_CHAIN.id)[0],
       })
 
     setLoadingText("Sending user operation...");
