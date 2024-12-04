@@ -1,59 +1,46 @@
-import { createWebAuthnKernelSmartAccountClient } from "@/account/smartAccount";
-import { fundTestToken } from "@/account/utils";
-import { WebAuthnCredentials } from "@/account/webauthnSigner";
-import { SOURCE_CHAIN_RPC_URL, TARGET_CHAIN_RPC_URL, TARGET_CHAIN, WEB3PAY_TEST_TOKEN } from "@/config";
+import { SOURCE_CHAIN_RPC_URL, TARGET_CHAIN_RPC_URL, TARGET_CHAIN, MULTI_CHAIN_PAYMASTER_SETTINGS } from "@/config";
 import { SOURCE_CHAIN } from "@/config";
-import { createMintNftCallData, createTestTokenTransfer } from "@/libs/utils";
-import { getWeb3AuthValidatorAddress, PaymasterVersion, ValidatorType, Web3AuthPaymaster, getSupportedFeeTokens } from "@web3auth/paymaster-sdk";
+import { createBundlerClient, createMintNftCallData, createTestTokenTransfer } from "@/libs/utils";
+import { MultiChainAccount, Web3AuthPaymaster, getSupportedFeeTokens } from "@web3auth/paymaster-sdk";
 import { createSmartAccountClient } from "permissionless";
 import { useState } from "react";
-import { http, PrivateKeyAccount, encodeFunctionData, erc20Abi, createWalletClient, parseUnits } from "viem";
-import { SmartAccount } from "viem/account-abstraction";
+import { http, PrivateKeyAccount, createWalletClient, parseUnits } from "viem";
 import { waitForTransactionReceipt } from "viem/actions";
 
 interface WebAuthnActionsProps {
-  account: SmartAccount;
-  webAuthnCredentials: WebAuthnCredentials;
+  multiChainAccount: MultiChainAccount;
   sponsor: PrivateKeyAccount;
 }
 
-export default function WebAuthnActions({ account, sponsor, webAuthnCredentials }: WebAuthnActionsProps) {
-  const [funded, setFunded] = useState(false);
+export default function WebAuthnActions({ multiChainAccount, sponsor }: WebAuthnActionsProps) {
   const [loading, setLoading] = useState(false);
   const [loadingText, setLoadingText] = useState("");
-  async function fundAccountIfNeeded() {
-    if (!funded) {
-      console.log("Funding test token to account");
-      await fundTestToken(account.address);
-      console.log("Funded test token to account");
-      setFunded(true);
-    }
-  }
 
   // send user operation without sponsor
   async function sendUserOperation() {
     setLoading(true);
     setLoadingText("Funding account...");
-    await fundAccountIfNeeded();
-    const accountClient = createSmartAccountClient({
-      account,
-      bundlerTransport: http(SOURCE_CHAIN_RPC_URL),
-    });
 
     const paymaster = new Web3AuthPaymaster({
       apiKey: process.env.NEXT_PUBLIC_WEB3AUTH_PAYMASTER_API_KEY || "",
       chains: [{ chainId: SOURCE_CHAIN.id, rpcUrl: SOURCE_CHAIN_RPC_URL }],
     });
-    const paymasterAddress = paymaster.core.getPaymasterAddress()
+    const account = await multiChainAccount.getAccount(SOURCE_CHAIN.id);
 
     setLoadingText("Preparing user operation...");
     const userOperation = await paymaster.core.prepareUserOperation({
       chainId: SOURCE_CHAIN.id,
-      accountClient,
-      calls: [createTestTokenTransfer(paymasterAddress)],
+      account,
+      calls: [createTestTokenTransfer()],
       feeToken: getSupportedFeeTokens(SOURCE_CHAIN.id)[0],
     });
+
     setLoadingText("Sending user operation...");
+    const accountClient = createSmartAccountClient({
+      account,
+      chain: SOURCE_CHAIN,
+      bundlerTransport: http(SOURCE_CHAIN_RPC_URL),
+    });
     const hash = await accountClient.sendUserOperation({
       ...userOperation,
       account,
@@ -68,9 +55,12 @@ export default function WebAuthnActions({ account, sponsor, webAuthnCredentials 
     if (!sponsor) throw new Error("Sponsor is required");
     setLoading(true);
     setLoadingText("Funding account...");
-    await fundAccountIfNeeded();
+
+    // get smart account for source chain
+    const account = await multiChainAccount.getAccount(SOURCE_CHAIN.id);
     const accountClient = createSmartAccountClient({
       account,
+      chain: SOURCE_CHAIN,
       bundlerTransport: http(SOURCE_CHAIN_RPC_URL),
     });
     const paymaster = new Web3AuthPaymaster({
@@ -78,13 +68,12 @@ export default function WebAuthnActions({ account, sponsor, webAuthnCredentials 
       chains: [{ chainId: SOURCE_CHAIN.id, rpcUrl: SOURCE_CHAIN_RPC_URL }],
       sponsor: sponsor,
     });
-    const paymasterAddress = paymaster.core.getPaymasterAddress()
 
     setLoadingText("Preparing user operation...");
     const userOperation = await paymaster.core.prepareUserOperation({
       chainId: SOURCE_CHAIN.id,
-      accountClient,
-      calls: [createTestTokenTransfer(paymasterAddress)],
+      account,
+      calls: [createTestTokenTransfer()],
       feeToken: getSupportedFeeTokens(SOURCE_CHAIN.id)[0],
     })
     
@@ -97,62 +86,36 @@ export default function WebAuthnActions({ account, sponsor, webAuthnCredentials 
     setLoading(false);
   }
 
-  async function prepareMultichainAccounts() {
-    const validatorAddress = getWeb3AuthValidatorAddress(
-      TARGET_CHAIN.id,
-      PaymasterVersion.V0_2_0,
-      ValidatorType.WEB_AUTHN
-    );
-    const sourceAccountClient = createSmartAccountClient({
-      account,
-      bundlerTransport: http(SOURCE_CHAIN_RPC_URL),
-    });
-    const targetAccountClient = await createWebAuthnKernelSmartAccountClient(TARGET_CHAIN, TARGET_CHAIN_RPC_URL, webAuthnCredentials, validatorAddress);
-    return { sourceAccountClient, targetAccountClient };
-  }
-
   // send user operation with multichain sponsor
   async function sendUserOpWithCrosschainSponsor() {
     setLoading(true);
     setLoadingText("Funding account...");
-    await fundAccountIfNeeded();
-    const { sourceAccountClient, targetAccountClient } = await prepareMultichainAccounts();
     // initialize paymaster
-    const paymaster = new Web3AuthPaymaster({
-      apiKey: process.env.NEXT_PUBLIC_WEB3AUTH_PAYMASTER_API_KEY || "",
-      chains: [
-        { chainId: SOURCE_CHAIN.id, rpcUrl: SOURCE_CHAIN_RPC_URL },
-        { chainId: TARGET_CHAIN.id, rpcUrl: TARGET_CHAIN_RPC_URL },
-      ],
-    });
+    const paymaster = new Web3AuthPaymaster(MULTI_CHAIN_PAYMASTER_SETTINGS);
 
+    // get smart account address
+    const accountAddress = await multiChainAccount.getAddress();
     // prepare multichain user operation
     setLoadingText("Preparing user operation...");
-    const { sourceUserOp, targetUserOp } = await paymaster.core.prepareMultiChainUserOperation({
-      // account
-      // destinationChainId
-      // sourceChainId
-      // userOp
-      // feeToken
-      sourceAccountClient,
-      targetAccountClient,
-      calls: [createMintNftCallData(targetAccountClient.account.address)],
+    const prepareMultiChainUserOperationResult = await paymaster.core.prepareMultiChainUserOperation({
+      account: multiChainAccount,
+      calls: [createMintNftCallData(accountAddress)],
       sourceChainId: SOURCE_CHAIN.id,
       targetChainId: TARGET_CHAIN.id,
       feeToken: getSupportedFeeTokens(TARGET_CHAIN.id)[0],
     })
     setLoadingText("Sending user operation...");
-    const sourceHash = await sourceAccountClient.sendUserOperation({ ...sourceUserOp, account: sourceAccountClient.account })
-    console.log('Source user op hash:', sourceHash)
 
-    const { receipt } = await sourceAccountClient.waitForUserOperationReceipt({ hash: sourceHash })
+    const { sourceUserOperationHash, targetUserOperationHash } = await multiChainAccount.sendMultiChainUserOperation(prepareMultiChainUserOperationResult)
+
+    const sourceBundlerClient = createBundlerClient(SOURCE_CHAIN, SOURCE_CHAIN_RPC_URL);
+    const { receipt } = await sourceBundlerClient.waitForUserOperationReceipt({ hash: sourceUserOperationHash })
     console.log("receipt", receipt);
 
     // wait for 5 seconds before polling for target user op status
     await new Promise((resolve) => setTimeout(resolve, 5_000))
 
-    const targetHash = paymaster.core.getTargetUserOperationHash(targetUserOp)
-    console.log('targetUserOpHash', targetHash)
+    console.log('targetUserOperationHash', targetUserOperationHash)
     setLoading(false);
   }
 
@@ -160,53 +123,45 @@ export default function WebAuthnActions({ account, sponsor, webAuthnCredentials 
   async function sendUserOpWithExternalCrossChainSponsor() {
     setLoading(true);
     setLoadingText("Funding account...");
-    await fundAccountIfNeeded();
     if (!sponsor) throw new Error("Sponsor is required");
-    const { sourceAccountClient, targetAccountClient } = await prepareMultichainAccounts();
-    // initialize paymaster
-    const paymaster = new Web3AuthPaymaster({
-      apiKey: process.env.NEXT_PUBLIC_WEB3AUTH_PAYMASTER_API_KEY || "",
-      chains: [
-        { chainId: SOURCE_CHAIN.id, rpcUrl: SOURCE_CHAIN_RPC_URL },
-        { chainId: TARGET_CHAIN.id, rpcUrl: TARGET_CHAIN_RPC_URL },
-      ],
-      paymasterVersion: PaymasterVersion.V0_2_0,
-      sponsor,
-    });
+
+    // initialize paymaster with sponsor
+    const paymaster = new Web3AuthPaymaster({ ...MULTI_CHAIN_PAYMASTER_SETTINGS, sponsor });
     // prepare multichain user operation with sponsor
     setLoadingText("Preparing user operation...");
-    const { sourceUserOp, targetUserOp, estimatedGasFeesOnTargetChain } = await paymaster.core.prepareMultiChainUserOperation({
-        sourceAccountClient,
-        targetAccountClient,
-        calls: [createMintNftCallData(targetAccountClient.account.address)],
-        sourceChainId: SOURCE_CHAIN.id,
-        targetChainId: TARGET_CHAIN.id,
-        feeToken: getSupportedFeeTokens(TARGET_CHAIN.id)[0],
-      })
+
+    // get smart account address
+    const accountAddress = await multiChainAccount.getAddress();
+
+    const { estimatedGasFeesOnTargetChain, ...prepareMultiChainUserOperationResult } = await paymaster.core.prepareMultiChainUserOperation({
+      account: multiChainAccount,
+      calls: [createMintNftCallData(accountAddress)],
+      sourceChainId: SOURCE_CHAIN.id,
+      targetChainId: TARGET_CHAIN.id,
+      feeToken: getSupportedFeeTokens(TARGET_CHAIN.id)[0],
+    })
     console.log("estimatedGasFeesOnTargetChain", estimatedGasFeesOnTargetChain);
     setLoadingText("Sending user operation...");
 
     await getTokenApproval(paymaster);
 
-    const sourceHash = await sourceAccountClient.sendUserOperation({ ...sourceUserOp, account: sourceAccountClient.account })
-    console.log('Source user op hash:', sourceHash)
+    const { sourceUserOperationHash, targetUserOperationHash } = await multiChainAccount.sendMultiChainUserOperation(prepareMultiChainUserOperationResult)
 
-    const { receipt } = await sourceAccountClient.waitForUserOperationReceipt({ hash: sourceHash })
+    const sourceBundlerClient = createBundlerClient(SOURCE_CHAIN, SOURCE_CHAIN_RPC_URL);
+    const { receipt } = await sourceBundlerClient.waitForUserOperationReceipt({ hash: sourceUserOperationHash })
     console.log("receipt", receipt);
 
     // wait for 5 seconds before polling for target user op status
     await new Promise((resolve) => setTimeout(resolve, 5_000))
 
-    const targetHash = paymaster.core.getTargetUserOperationHash(targetUserOp)
-    console.log('targetUserOpHash', targetHash)
+    console.log('targetUserOperationHash', targetUserOperationHash)
     setLoading(false);
   }
 
   async function sendCrosschainLiquidityTransaction() {
     setLoading(true);
     setLoadingText("Funding account...");
-    await fundAccountIfNeeded();
-    const { sourceAccountClient, targetAccountClient } = await prepareMultichainAccounts();
+
     // initialize paymaster
     const paymaster = new Web3AuthPaymaster({
       apiKey: process.env.NEXT_PUBLIC_WEB3AUTH_PAYMASTER_API_KEY || "",
@@ -217,22 +172,13 @@ export default function WebAuthnActions({ account, sponsor, webAuthnCredentials 
     });
     const transferAmount = parseUnits('10', 6)
 
+    // get smart account address
+    const accountAddress = await multiChainAccount.getAddress();
+
     setLoadingText("Preparing user operation...");
-    const { sourceUserOp, targetUserOp } =
-      await paymaster.core.prepareMultiChainUserOperation({
-        sourceAccountClient,
-        targetAccountClient,
-        calls: [
-          {
-            to: WEB3PAY_TEST_TOKEN,
-            value: 0n,
-            data: encodeFunctionData({
-              abi: erc20Abi,
-              functionName: 'transfer',
-              args: [targetAccountClient.account.address, transferAmount],
-            }),
-          },
-        ],
+    const prepareMultiChainUserOperationResult = await paymaster.core.prepareMultiChainUserOperation({
+        account: multiChainAccount,
+        calls: [createTestTokenTransfer(accountAddress, transferAmount)],
         sourceChainId: SOURCE_CHAIN.id,
         targetChainId: TARGET_CHAIN.id,
         targetAmount: transferAmount,
@@ -240,24 +186,23 @@ export default function WebAuthnActions({ account, sponsor, webAuthnCredentials 
       })
 
     setLoadingText("Sending user operation...");
-    const sourceHash = await sourceAccountClient.sendUserOperation({ ...sourceUserOp, account: sourceAccountClient.account })
-    console.log('Source user op hash:', sourceHash)
+    const { sourceUserOperationHash, targetUserOperationHash } = await multiChainAccount.sendMultiChainUserOperation(prepareMultiChainUserOperationResult)
+    console.log('sourceUserOperationHash:', sourceUserOperationHash)
 
-    const { receipt } = await sourceAccountClient.waitForUserOperationReceipt({ hash: sourceHash })
+    const sourceBundlerClient = createBundlerClient(SOURCE_CHAIN, SOURCE_CHAIN_RPC_URL);
+    const { receipt } = await sourceBundlerClient.waitForUserOperationReceipt({ hash: sourceUserOperationHash })
     console.log("receipt", receipt);
 
     // wait for 5 seconds before polling for target user op status
     await new Promise((resolve) => setTimeout(resolve, 5_000))
 
-    const targetHash = paymaster.core.getTargetUserOperationHash(targetUserOp)
-    console.log('targetUserOpHash', targetHash)
+    console.log('targetUserOperationHash', targetUserOperationHash)
     setLoading(false);
   }
 
   async function getTokenApproval(paymaster: Web3AuthPaymaster) {
     if (!sponsor) throw new Error("Sponsor is required");
 
-    await fundAccountIfNeeded();
     const tokenApprovalCall = await paymaster.core.createTokenApprovalCallIfRequired({ chainId: SOURCE_CHAIN.id, accountAddress: sponsor.address })
     if (!tokenApprovalCall) return;
     const sponsorWalletClient = createWalletClient({

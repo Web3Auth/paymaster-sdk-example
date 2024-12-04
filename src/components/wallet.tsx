@@ -1,55 +1,65 @@
 "use client";
 
-import { getSupportedFeeTokens, Web3AuthPaymaster } from "@web3auth/paymaster-sdk";
+import { getSupportedFeeTokens, MultiChainAccount, SignerType, Web3AuthPaymaster } from "@web3auth/paymaster-sdk";
 import { createSmartAccountClient } from "permissionless/clients";
-import { useCallback, useState } from "react";
-import { Hex, http, PrivateKeyAccount } from "viem";
+import { useCallback, useEffect, useState } from "react";
+import { Address, Hex, http, PrivateKeyAccount } from "viem";
 import { SmartAccount } from "viem/account-abstraction";
 
-import { fundTestToken } from "@/account/utils";
-import { WebAuthnCredentials } from "@/account/webauthnSigner";
 import { SOURCE_CHAIN, SOURCE_CHAIN_RPC_URL, TARGET_CHAIN } from "@/config";
 import ExternalSponsor from "./external-sponsor";
 import WebAuthnActions from "./webauthn";
 import { createTestTokenTransfer } from "@/libs/utils";
 
 interface WalletProps {
-  account: SmartAccount;
-  type: "ecdsa" | "webauthn";
-  webAuthnCredentials?: WebAuthnCredentials;
+  account: SmartAccount | MultiChainAccount;
+  type: SignerType;
 }
 
-export default function Wallet({ account, type, webAuthnCredentials }: WalletProps) {
+export default function Wallet({ account: _account, type }: WalletProps) {
+  const [accountAddress, setAccountAddress] = useState<Address>();
   const [loading, setLoading] = useState(false);
   const [loadingText, setLoadingText] = useState("Loading...");
   const [eoaWallet, setEoaWallet] = useState<PrivateKeyAccount>();
-  const [funded, setFunded] = useState(false);
   const [targetOpHash, setTargetOpHash] = useState<Hex>();
 
+  // single chain userOp
   async function sendUserOperation() {
     try {
       setLoading(true);
-      await fundAccountIfNeeded();
+      
+      const account = _account as SmartAccount;
 
       const paymaster = new Web3AuthPaymaster({
         apiKey: process.env.NEXT_PUBLIC_WEB3AUTH_PAYMASTER_API_KEY || "",
         chains: [{ chainId: SOURCE_CHAIN.id, rpcUrl: SOURCE_CHAIN_RPC_URL }],
+        web3AuthClientId: "test-client-id",
       });
-      const paymasterAddress = paymaster.core.getPaymasterAddress()
 
-      const accountClient = createSmartAccountClient({
-        account,
-        bundlerTransport: http(SOURCE_CHAIN_RPC_URL),
-      });
       setLoadingText("Preparing user operation ...");
+
+      const feeToken = getSupportedFeeTokens(SOURCE_CHAIN.id)[0];
+
+      // approve paymaster for erc20 token gas
+      const tokenApprovalCall = await paymaster.core.createTokenApprovalCallIfRequired({ tokenAddress: feeToken, accountAddress: account.address })
+      const calls = [createTestTokenTransfer()];
+      if (tokenApprovalCall) {
+        calls.unshift(tokenApprovalCall);
+      }
+
       const userOperation = await paymaster.core.prepareUserOperation({
+        account,
         chainId: SOURCE_CHAIN.id,
-        accountClient,
-        calls: [createTestTokenTransfer(paymasterAddress)],
-        feeToken: getSupportedFeeTokens(SOURCE_CHAIN.id)[0],
+        calls,
+        feeToken,
       })
   
       setLoadingText("Sending user operation ...");
+      const accountClient = createSmartAccountClient({
+        account,
+        chain: SOURCE_CHAIN,
+        bundlerTransport: http(SOURCE_CHAIN_RPC_URL),
+      })
       const hash = await accountClient.sendUserOperation({
         ...userOperation,
         account,
@@ -64,19 +74,22 @@ export default function Wallet({ account, type, webAuthnCredentials }: WalletPro
     }
   }
 
-  async function fundAccountIfNeeded() {
-    if (!funded) {
-      setLoadingText("Funding test token to account ...");
-      console.log("Funding test token to account");
-      await fundTestToken(account.address);
-      console.log("Funded test token to account");
-      setFunded(true);
-    }
-  }
-
   const onEoaWalletFunded = useCallback((account: PrivateKeyAccount) => {
     setEoaWallet(account);
   }, []);
+
+  useEffect(() => {
+    (async () => {
+      console.log("type", type);
+      let address: Address;
+      if (type === SignerType.ECDSA) {
+        address = (_account as SmartAccount).address;
+      } else {
+        address = await (_account as MultiChainAccount).getAddress();
+      }
+      setAccountAddress(address);
+    })()
+  }, [_account, type]);
 
   return (
     <div className="relative flex flex-col items-center justify-center gap-3 border border-gray-300 rounded-md p-6">
@@ -91,7 +104,7 @@ export default function Wallet({ account, type, webAuthnCredentials }: WalletPro
       </div>
       <div className="flex items-center justify-between gap-2 w-full">
         <p className="text-xs bg-gray-100 p-2 rounded-md text-gray-800">
-          Smart Account: <b className="text-sm">{account.address}</b>
+          Smart Account: <b className="text-sm">{accountAddress}</b>
         </p>
         <p className="text-sm bg-red-100 p-2 rounded-md text-gray-800">
           {type}
@@ -103,8 +116,8 @@ export default function Wallet({ account, type, webAuthnCredentials }: WalletPro
           eoaWallet={eoaWallet}
         />
       )}
-      {type === "webauthn" && webAuthnCredentials && eoaWallet ? (
-        <WebAuthnActions account={account} webAuthnCredentials={webAuthnCredentials} sponsor={eoaWallet}/>
+      {type === "webauthn" && eoaWallet ? (
+        <WebAuthnActions multiChainAccount={_account as MultiChainAccount} sponsor={eoaWallet}/>
       ) : (
         <button
           className="bg-blue-400 mt-8 p-2 rounded-md text-sm w-full"

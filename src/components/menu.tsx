@@ -1,31 +1,19 @@
 "use client";
 
 import {
-  getWeb3AuthValidatorAddress,
-  PaymasterVersion,
-  ValidatorType,
+  MultiChainAccount,
+  MultiChainKernelAccount,
+  SignerType,
+  WebAuthnSignerService,
 } from "@web3auth/paymaster-sdk";
 import { toEcdsaKernelSmartAccount } from "permissionless/accounts";
-import { createPublicClient, http, keccak256 } from "viem";
+import { createPublicClient, http } from "viem";
 import { SmartAccount } from "viem/account-abstraction";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
-
-import { toWebAuthnKernelSmartAccount } from "@/account/smartAccount";
-import { b64ToBytes } from "@/account/utils";
-import { webauthnRegister } from "@/account/webauthnService";
-import { WebAuthnCredentials } from "@/account/webauthnSigner";
-import { SOURCE_CHAIN, SOURCE_CHAIN_RPC_URL } from "@/config";
+import { MULTI_CHAIN_RPC_INFO, SOURCE_CHAIN, SOURCE_CHAIN_RPC_URL, WEB3PAY_API_URL } from "@/config";
 
 interface MenuProps {
-  onAccountCreated: ({
-    account,
-    type,
-    webAuthnCredentials,
-  }: {
-    account: SmartAccount;
-    type: "ecdsa" | "webauthn";
-    webAuthnCredentials?: WebAuthnCredentials;
-  }) => void;
+  onAccountCreated: (account: SmartAccount | MultiChainAccount, type: SignerType) => void
 }
 
 export default function Menu({ onAccountCreated }: MenuProps) {
@@ -40,42 +28,13 @@ export default function Menu({ onAccountCreated }: MenuProps) {
       client,
       owners: [owner],
     });
-    onAccountCreated({ account, type: "ecdsa" });
+    onAccountCreated(account, SignerType.ECDSA);
   }
 
   async function createWebAuthnAccount() {
-    const client = createPublicClient({
-      chain: SOURCE_CHAIN,
-      transport: http(SOURCE_CHAIN_RPC_URL),
-    });
-    const { cred } = await webauthnRegister();
-    const publicKey = cred.response.publicKey;
-    if (!publicKey)
-      throw new Error("public not return from the Passksey authentication");
-
-    const authenticatorId = cred.id;
-
-    // get validator address from Paymaster SDK
-    const validatorAddress = getWeb3AuthValidatorAddress(
-      SOURCE_CHAIN.id,
-      PaymasterVersion.V0_2_0,
-      ValidatorType.WEB_AUTHN
-    );
-    const account = await toWebAuthnKernelSmartAccount({
-      client,
-      webAuthnKey: {
-        publicKey,
-        authenticatorId,
-        authenticatorIdHash: keccak256(b64ToBytes(authenticatorId)),
-      },
-      validatorAddress,
-    });
-    console.log("account", account);
-    onAccountCreated({
-      account,
-      type: "webauthn",
-      webAuthnCredentials: { authenticatorId, publicKey },
-    });
+    const webauthnSigner = await WebAuthnSignerService.initSigner({ type: "register", webAuthnServerUrl: WEB3PAY_API_URL });
+    const multiChainAccount = new MultiChainKernelAccount(webauthnSigner, MULTI_CHAIN_RPC_INFO)
+    onAccountCreated(multiChainAccount, SignerType.WEBAUTHN);
   }
 
   return (
