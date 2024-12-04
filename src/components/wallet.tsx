@@ -1,15 +1,14 @@
 "use client";
 
-import { getSupportedFeeTokens, MultiChainAccount, SignerType, Web3AuthPaymaster } from "@web3auth/paymaster-sdk";
-import { createSmartAccountClient } from "permissionless/clients";
+import { MultiChainAccount, SignerType } from "@web3auth/paymaster-sdk";
 import { useCallback, useEffect, useState } from "react";
-import { Address, Hex, http, PrivateKeyAccount } from "viem";
+import { Address, PrivateKeyAccount } from "viem";
 import { SmartAccount } from "viem/account-abstraction";
 
-import { SOURCE_CHAIN, SOURCE_CHAIN_RPC_URL, TARGET_CHAIN } from "@/config";
+import { SOURCE_CHAIN, TARGET_CHAIN } from "@/config";
 import ExternalSponsor from "./external-sponsor";
 import WebAuthnActions from "./webauthn";
-import { createTestTokenTransfer } from "@/libs/utils";
+import EcdsaActions from "./ecdsa";
 
 interface WalletProps {
   account: SmartAccount | MultiChainAccount;
@@ -18,62 +17,9 @@ interface WalletProps {
 
 export default function Wallet({ account: _account, type }: WalletProps) {
   const [accountAddress, setAccountAddress] = useState<Address>();
-  const [loading, setLoading] = useState(false);
-  const [loadingText, setLoadingText] = useState("Loading...");
   const [eoaWallet, setEoaWallet] = useState<PrivateKeyAccount>();
-  const [targetOpHash, setTargetOpHash] = useState<Hex>();
 
-  // single chain userOp
-  async function sendUserOperation() {
-    try {
-      setLoading(true);
-      
-      const account = _account as SmartAccount;
-
-      const paymaster = new Web3AuthPaymaster({
-        apiKey: process.env.NEXT_PUBLIC_WEB3AUTH_PAYMASTER_API_KEY || "",
-        chains: [{ chainId: SOURCE_CHAIN.id, rpcUrl: SOURCE_CHAIN_RPC_URL }],
-        web3AuthClientId: "test-client-id",
-      });
-
-      setLoadingText("Preparing user operation ...");
-
-      const feeToken = getSupportedFeeTokens(SOURCE_CHAIN.id)[0];
-
-      // approve paymaster for erc20 token gas
-      const tokenApprovalCall = await paymaster.core.createTokenApprovalCallIfRequired({ tokenAddress: feeToken, accountAddress: account.address })
-      const calls = [createTestTokenTransfer()];
-      if (tokenApprovalCall) {
-        calls.unshift(tokenApprovalCall);
-      }
-
-      const userOperation = await paymaster.core.prepareUserOperation({
-        account,
-        chainId: SOURCE_CHAIN.id,
-        calls,
-        feeToken,
-      })
   
-      setLoadingText("Sending user operation ...");
-      const accountClient = createSmartAccountClient({
-        account,
-        chain: SOURCE_CHAIN,
-        bundlerTransport: http(SOURCE_CHAIN_RPC_URL),
-      })
-      const hash = await accountClient.sendUserOperation({
-        ...userOperation,
-        account,
-      })
-      setTargetOpHash(hash);
-      const { receipt } = await accountClient.waitForUserOperationReceipt({ hash })
-      console.log("receipt", receipt);
-    } catch (error) {
-      console.error("error", (error as Error).stack);
-    } finally {
-      setLoading(false);
-    }
-  }
-
   const onEoaWalletFunded = useCallback((account: PrivateKeyAccount) => {
     setEoaWallet(account);
   }, []);
@@ -119,23 +65,7 @@ export default function Wallet({ account: _account, type }: WalletProps) {
       {type === "webauthn" && eoaWallet ? (
         <WebAuthnActions multiChainAccount={_account as MultiChainAccount} sponsor={eoaWallet}/>
       ) : (
-        <button
-          className="bg-blue-400 mt-8 p-2 rounded-md text-sm w-full"
-          onClick={sendUserOperation}
-          disabled={loading}
-        >
-          Send User Operation (with ERC20 Token gas)
-        </button>
-      )}
-      {targetOpHash && (
-        <p className="text-xs bg-green-300 p-2 rounded-md my-4 text-gray-800">
-          Target userOp hash: {targetOpHash}
-        </p>
-      )}
-      {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100/80 text-sm text-gray-800">
-          {loadingText}
-        </div>
+        <EcdsaActions account={_account as SmartAccount}/>
       )}
     </div>
   );
