@@ -1,6 +1,9 @@
 import { SOURCE_CHAIN_1 } from "@/config";
 import { SOURCE_CHAIN_1_RPC_URL } from "@/config";
-import { getSupportedFeeTokens, Web3AuthPaymaster } from "@web3auth/paymaster-sdk";
+import {
+  getSupportedFeeTokens,
+  Web3AuthPaymaster,
+} from "@web3auth/paymaster-sdk";
 import { useState } from "react";
 import { Hex, http } from "viem";
 import { SmartAccount } from "viem/account-abstraction";
@@ -15,7 +18,7 @@ export default function EcdsaActions({ account }: EcdsaActionsProps) {
   const [loading, setLoading] = useState(false);
   const [loadingText, setLoadingText] = useState("Loading...");
   const [targetOpHash, setTargetOpHash] = useState<Hex>();
-  
+
   // single chain userOp with ECDSA account
   async function sendUserOperation() {
     try {
@@ -23,7 +26,9 @@ export default function EcdsaActions({ account }: EcdsaActionsProps) {
 
       const paymaster = new Web3AuthPaymaster({
         apiKey: process.env.NEXT_PUBLIC_WEB3AUTH_PAYMASTER_API_KEY || "",
-        chains: [{ chainId: SOURCE_CHAIN_1.id, rpcUrl: SOURCE_CHAIN_1_RPC_URL }],
+        chains: [
+          { chainId: SOURCE_CHAIN_1.id, rpcUrl: SOURCE_CHAIN_1_RPC_URL },
+        ],
         web3AuthClientId: "test-client-id",
       });
 
@@ -36,20 +41,22 @@ export default function EcdsaActions({ account }: EcdsaActionsProps) {
         chainId: SOURCE_CHAIN_1.id,
         calls: [createTokenTransferCall()],
         feeToken,
-      })
-  
+      });
+
       setLoadingText("Sending user operation ...");
       const accountClient = createSmartAccountClient({
         account,
         chain: SOURCE_CHAIN_1,
         bundlerTransport: http(SOURCE_CHAIN_1_RPC_URL),
-      })
+      });
       const hash = await accountClient.sendUserOperation({
         ...userOperation,
         account,
-      })
+      });
       setTargetOpHash(hash);
-      const { receipt } = await accountClient.waitForUserOperationReceipt({ hash })
+      const { receipt } = await accountClient.waitForUserOperationReceipt({
+        hash,
+      });
       console.log("receipt", receipt);
     } catch (error) {
       console.error("error", (error as Error).stack);
@@ -60,7 +67,12 @@ export default function EcdsaActions({ account }: EcdsaActionsProps) {
 
   return (
     <div className="flex relative flex-col gap-2 w-full">
-      <button className="bg-blue-400 p-2 rounded-md text-sm w-full" onClick={sendUserOperation}>Send User Operation (with ERC20 Token gas)</button>
+      <button
+        className="bg-blue-400 p-2 rounded-md text-sm w-full"
+        onClick={sendUserOperation}
+      >
+        Send User Operation (with ERC20 Token gas)
+      </button>
       {targetOpHash && (
         <p className="text-xs bg-green-300 p-2 rounded-md my-4 text-gray-800">
           Target userOp hash: {targetOpHash}
@@ -72,5 +84,5 @@ export default function EcdsaActions({ account }: EcdsaActionsProps) {
         </div>
       )}
     </div>
-  )
+  );
 }

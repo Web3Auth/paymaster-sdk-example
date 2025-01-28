@@ -11,7 +11,10 @@ export default function Home() {
   const [account, setAccount] = useState<SmartAccount | MultiChainAccount>();
   const [signerType, setSignerType] = useState<SignerType>(SignerType.ECDSA);
 
-  async function handleAccountCreated(account: SmartAccount | MultiChainAccount, type: SignerType) {
+  async function handleAccountCreated(
+    account: SmartAccount | MultiChainAccount,
+    type: SignerType
+  ) {
     setAccount(account);
     setSignerType(type);
   }
@@ -24,14 +27,9 @@ export default function Home() {
         </p>
       </div>
       {account ? (
-        <Wallet
-          account={account}
-          type={signerType}
-        />
+        <Wallet account={account} type={signerType} />
       ) : (
-        <Menu
-          onAccountCreated={handleAccountCreated}
-        />
+        <Menu onAccountCreated={handleAccountCreated} />
       )}
     </div>
   );

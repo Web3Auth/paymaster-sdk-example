@@ -1,6 +1,11 @@
 "use client";
 
-import { SOURCE_CHAIN_1, SOURCE_CHAIN_1_RPC_URL, WEB3PAY_API_URL, WEB3PAY_TEST_TOKEN } from "@/config";
+import {
+  SOURCE_CHAIN_1,
+  SOURCE_CHAIN_1_RPC_URL,
+  WEB3PAY_API_URL,
+  WEB3PAY_TEST_TOKEN,
+} from "@/config";
 import { useEffect, useState } from "react";
 import { createWalletClient, erc20Abi, getContract, http } from "viem";
 import {
