@@ -6,7 +6,7 @@ export const SOURCE_CHAIN_1 = baseSepolia;
 export const SOURCE_CHAIN_2 = polygonAmoy;
 export const TARGET_CHAIN = optimismSepolia;
 
-const proxyRpcUrl = "https://70f270bc99bb.ngrok.app";
+const proxyRpcUrl = "https://rpc-proxy.web3auth.dev";
 export const SOURCE_CHAIN_1_RPC_URL = `${proxyRpcUrl}?network=${SOURCE_CHAIN_1.id}`;
 export const SOURCE_CHAIN_2_RPC_URL = `${proxyRpcUrl}?network=${SOURCE_CHAIN_2.id}`;
 export const TARGET_CHAIN_RPC_URL = `${proxyRpcUrl}?network=${TARGET_CHAIN.id}`;

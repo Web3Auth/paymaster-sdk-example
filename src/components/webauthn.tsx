@@ -41,7 +41,6 @@ export default function WebAuthnActions({
     try {
       // initialize paymaster
       const paymaster = new Web3AuthPaymaster(MULTI_CHAIN_PAYMASTER_SETTINGS);
-      paymaster.config.paymasterApiUrl = "https://75fac6d50d62.ngrok.app";
 
       // get smart account address
       const accountAddress = await multiChainAccount.getAddress();
@@ -88,7 +87,6 @@ export default function WebAuthnActions({
     try {
       // initialize paymaster
       const paymaster = new Web3AuthPaymaster(MULTI_CHAIN_PAYMASTER_SETTINGS);
-      paymaster.config.paymasterApiUrl = "https://75fac6d50d62.ngrok.app";
       const transferAmount = parseUnits("0.01", 18);
 
       // get smart account address
@@ -138,7 +136,6 @@ export default function WebAuthnActions({
     try {
       // initialize paymaster
       const paymaster = new Web3AuthPaymaster(MULTI_CHAIN_PAYMASTER_SETTINGS);
-      paymaster.config.paymasterApiUrl = "https://75fac6d50d62.ngrok.app";
 
       // get smart account address
       const accountAddress = await multiChainAccount.getAddress();
