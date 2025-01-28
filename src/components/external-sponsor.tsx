@@ -1,6 +1,6 @@
 "use client";
 
-import { SOURCE_CHAIN, SOURCE_CHAIN_RPC_URL, WEB3PAY_API_URL, WEB3PAY_TEST_TOKEN } from "@/config";
+import { SOURCE_CHAIN_1, SOURCE_CHAIN_1_RPC_URL, WEB3PAY_API_URL, WEB3PAY_TEST_TOKEN } from "@/config";
 import { useEffect, useState } from "react";
 import { createWalletClient, erc20Abi, getContract, http } from "viem";
 import {
@@ -44,8 +44,8 @@ export default function ExternalSponsor({
 
         const walletClient = createWalletClient({
           account,
-          chain: SOURCE_CHAIN,
-          transport: http(SOURCE_CHAIN_RPC_URL),
+          chain: SOURCE_CHAIN_1,
+          transport: http(SOURCE_CHAIN_1_RPC_URL),
         });
 
         const w3pToken = getContract({
@@ -72,7 +72,7 @@ export default function ExternalSponsor({
           },
           signal: ac.signal,
           body: JSON.stringify({
-            chainId: SOURCE_CHAIN.id,
+            chainId: SOURCE_CHAIN_1.id,
             toAddress: account.address,
           }),
         });

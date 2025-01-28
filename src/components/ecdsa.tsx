@@ -1,10 +1,10 @@
-import { SOURCE_CHAIN } from "@/config";
-import { SOURCE_CHAIN_RPC_URL } from "@/config";
+import { SOURCE_CHAIN_1 } from "@/config";
+import { SOURCE_CHAIN_1_RPC_URL } from "@/config";
 import { getSupportedFeeTokens, Web3AuthPaymaster } from "@web3auth/paymaster-sdk";
 import { useState } from "react";
 import { Hex, http } from "viem";
 import { SmartAccount } from "viem/account-abstraction";
-import { createTestTokenTransfer } from "@/libs/utils";
+import { createTokenTransferCall } from "@/libs/utils";
 import { createSmartAccountClient } from "permissionless";
 
 interface EcdsaActionsProps {
@@ -23,33 +23,26 @@ export default function EcdsaActions({ account }: EcdsaActionsProps) {
 
       const paymaster = new Web3AuthPaymaster({
         apiKey: process.env.NEXT_PUBLIC_WEB3AUTH_PAYMASTER_API_KEY || "",
-        chains: [{ chainId: SOURCE_CHAIN.id, rpcUrl: SOURCE_CHAIN_RPC_URL }],
+        chains: [{ chainId: SOURCE_CHAIN_1.id, rpcUrl: SOURCE_CHAIN_1_RPC_URL }],
         web3AuthClientId: "test-client-id",
       });
 
       setLoadingText("Preparing user operation ...");
 
-      const feeToken = getSupportedFeeTokens(SOURCE_CHAIN.id)[0];
-
-      // approve paymaster for erc20 token gas
-      const tokenApprovalCall = await paymaster.core.createTokenApprovalCallIfRequired({ tokenAddress: feeToken, accountAddress: account.address })
-      const calls = [createTestTokenTransfer()];
-      if (tokenApprovalCall) {
-        calls.unshift(tokenApprovalCall);
-      }
+      const feeToken = getSupportedFeeTokens(SOURCE_CHAIN_1.id)[0];
 
       const userOperation = await paymaster.core.prepareUserOperation({
         account,
-        chainId: SOURCE_CHAIN.id,
-        calls,
+        chainId: SOURCE_CHAIN_1.id,
+        calls: [createTokenTransferCall()],
         feeToken,
       })
   
       setLoadingText("Sending user operation ...");
       const accountClient = createSmartAccountClient({
         account,
-        chain: SOURCE_CHAIN,
-        bundlerTransport: http(SOURCE_CHAIN_RPC_URL),
+        chain: SOURCE_CHAIN_1,
+        bundlerTransport: http(SOURCE_CHAIN_1_RPC_URL),
       })
       const hash = await accountClient.sendUserOperation({
         ...userOperation,
