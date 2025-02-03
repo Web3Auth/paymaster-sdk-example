@@ -203,7 +203,7 @@ export default function WebAuthnActions({
         className="bg-blue-400 p-2 rounded-md text-sm w-full"
         onClick={sendCrosschainLiquidityTransaction}
       >
-        Send Weth from Polygon Amoy to Optimism Sepolia
+        Send 0.01 Weth from Polygon Amoy to Optimism Sepolia
       </button>
       <button
         className="bg-blue-400 p-2 rounded-md text-sm w-full"
