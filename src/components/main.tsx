@@ -11,6 +11,7 @@ import { initWeb3AuthPaymaster } from "@/utils/paymaster";
 import BalanceForm from "./balance-form";
 import { getBlockExplorerUrl, getBundlerClient } from "@/utils";
 import { parseCrosschainUserOpData, prepareCrosschainUserOp } from "@/utils/userop";
+import FundToken from "./fund-token";
 
 interface WalletProps {
   account: MultiChainAccount;
@@ -22,8 +23,9 @@ export default function Main({ account, type = SignerType.WEBAUTHN }: WalletProp
   const [loadingText, setLoadingText] = useState('Loading...');
   const [accountAddress, setAccountAddress] = useState<Address>(zeroAddress);
   const [txType, setTxType] = useState<CrosschainTransactionType>(CrosschainTransactionType.CROSSCHAIN_SPONSORSHIP);
-  const [txModalOpen, setTxModalOpen] = useState(true);
+  const [txModalOpen, setTxModalOpen] = useState(false);
   const [balanceModalOpen, setBalanceModalOpen] = useState(false);
+  const [fundModalOpen, setFundModalOpen] = useState(true);
   const [finalUserOpHash, setFinalUserOpHash] = useState<Hex | undefined>(undefined);
   const [blockExplorerUrl, setBlockExplorerUrl] = useState<string | undefined>(undefined);
 
@@ -111,12 +113,19 @@ export default function Main({ account, type = SignerType.WEBAUTHN }: WalletProp
               </p>
             </div>
             <div className="my-4 flex flex-col gap-2 w-full">
+            <button
+                className="bg-teal-500 p-2 rounded-md text-sm w-full text-white font-bold"
+                onClick={() => setFundModalOpen(true)}
+              >
+                Fund Test Token
+              </button>
               <button
-                className="bg-blue-500 p-2 rounded-md text-sm w-full text-white font-bold"
+                className="bg-green-500 p-2 rounded-md text-sm w-full text-white font-bold"
                 onClick={() => setBalanceModalOpen(true)}
               >
                 Show Test Token Balances
               </button>
+              <br />
               <button
                 className="bg-blue-500 p-2 rounded-md text-sm w-full text-white font-bold"
                 onClick={() => handleButtonClick(CrosschainTransactionType.CROSSCHAIN_SPONSORSHIP)}
@@ -150,9 +159,16 @@ export default function Main({ account, type = SignerType.WEBAUTHN }: WalletProp
                 </Modal>
               )
             }
+            {
+              fundModalOpen && (
+                <Modal>
+                  <FundToken accountAddress={accountAddress} onCancel={() => setFundModalOpen(false)} />
+                </Modal>
+              )
+            }
             {finalUserOpHash && blockExplorerUrl && (
               <div className="mt-4 w-full bg-gray-200 p-2 rounded-md">
-                <p className="text-xs">
+                <p className="text-xs text-gray-700 dark:text-gray-100">
                   Target Transaction Hash:{" "}
                   <a
                     className="text-xs text-blue-400 font-bold underline"
