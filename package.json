@@ -12,10 +12,11 @@
     "@simplewebauthn/browser": "^11.0.0",
     "@web3auth/chain-abstraction-sdk": "file:web3auth-chain-abstraction-sdk-0.0.1.tgz",
     "@web3auth/erc7579": "file:web3auth-erc7579-0.0.1.tgz",
-    "next": "15.0.3",
+    "framer-motion": "^12.4.3",
+    "next": "15.1.7",
     "permissionless": "^0.2.17",
-    "react": "19.0.0-rc-66855b96-20241106",
-    "react-dom": "19.0.0-rc-66855b96-20241106",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
     "viem": "^2.21.44"
   },
   "devDependencies": {

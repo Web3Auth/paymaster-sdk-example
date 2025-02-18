@@ -1,4 +1,4 @@
-import { MULTI_CHAIN_RPC_INFO, SOURCE_CHAIN_2, SOURCE_CHAIN_1, TARGET_CHAIN } from "@/config";
+import { MULTI_CHAIN_RPC_INFO, CHAIN_2, CHAIN_1, CHAIN_3 } from "@/config";
 import { http } from "viem";
 import { createBundlerClient as createViemBundlerClient } from "viem/account-abstraction";
 
@@ -7,7 +7,7 @@ export const getChainConfigById = (chainId: number) => {
   if (!chainConfig) {
     throw new Error(`Chain config not found for chainId: ${chainId}`);
   }
-  const chain = [SOURCE_CHAIN_1, SOURCE_CHAIN_2, TARGET_CHAIN].find((chain) => chain.id === chainId);
+  const chain = [CHAIN_1, CHAIN_2, CHAIN_3].find((chain) => chain.id === chainId);
   if (!chain) {
     throw new Error(`Chain not found for chainId: ${chainId}`);
   }
@@ -20,4 +20,13 @@ export const getBundlerClient = (chainId: number) => {
     chain: chain,
     transport: http(rpcUrl),
   });
+}
+
+export const getBlockExplorerUrl = (chainId: number) => {
+  const chains = [CHAIN_1, CHAIN_2, CHAIN_3];
+  const chain = chains.find((chain) => chain.id === chainId);
+  if (!chain) {
+    throw new Error(`Chain not found for chainId: ${chainId}`);
+  }
+  return chain.blockExplorers?.default.url;
 }

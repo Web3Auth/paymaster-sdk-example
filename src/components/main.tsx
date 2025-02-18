@@ -1,6 +1,5 @@
 "use client";
 
-import { SOURCE_CHAIN_1, SOURCE_CHAIN_2, TARGET_CHAIN } from "@/config";
 import { MultiChainAccount } from "@web3auth/chain-abstraction-sdk";
 import { SignerType } from "@web3auth/erc7579";
 import { useEffect, useState } from "react";
@@ -10,7 +9,7 @@ import TxForm from "./tx-form";
 import { CrosschainTransactionType } from "@/types";
 import { initWeb3AuthPaymaster } from "@/utils/paymaster";
 import BalanceForm from "./balance-form";
-import { getBundlerClient } from "@/utils";
+import { getBlockExplorerUrl, getBundlerClient } from "@/utils";
 import { parseCrosschainUserOpData, prepareCrosschainUserOp } from "@/utils/userop";
 
 interface WalletProps {
@@ -23,31 +22,33 @@ export default function Main({ account, type = SignerType.WEBAUTHN }: WalletProp
   const [loadingText, setLoadingText] = useState('Loading...');
   const [accountAddress, setAccountAddress] = useState<Address>(zeroAddress);
   const [txType, setTxType] = useState<CrosschainTransactionType>(CrosschainTransactionType.CROSSCHAIN_SPONSORSHIP);
-  const [txModalOpen, setTxModalOpen] = useState(false);
+  const [txModalOpen, setTxModalOpen] = useState(true);
   const [balanceModalOpen, setBalanceModalOpen] = useState(false);
   const [finalUserOpHash, setFinalUserOpHash] = useState<Hex | undefined>(undefined);
+  const [blockExplorerUrl, setBlockExplorerUrl] = useState<string | undefined>(undefined);
 
   async function handleButtonClick(txType: CrosschainTransactionType) {
     setTxType(txType);
     setTxModalOpen(true);
   }
 
-  async function handleTxExecute(multiSrcProps?: {
-    sourceAmount1: Hex;
-    sourceAmount2: Hex;
-  }) {
+  async function handleTxExecute(
+    sourceChainIds: number[],
+    targetChainId: number,
+    sourceFunds?: Hex[]
+  ) {
     setTxModalOpen(false);
     setLoading(true);
 
     try {
       const paymaster = await initWeb3AuthPaymaster();
-      let sourceFunds: Hex[] | undefined;
-      if (txType === CrosschainTransactionType.MULTI_SOURCE && multiSrcProps) {
-        console.log("multiSrcProps", multiSrcProps);
-        const { sourceAmount1, sourceAmount2 } = multiSrcProps;
-        sourceFunds = [sourceAmount1, sourceAmount2];
-      }
-      const parsedCrossChainUserOpParams = parseCrosschainUserOpData(txType, accountAddress, sourceFunds);
+      const parsedCrossChainUserOpParams = parseCrosschainUserOpData({
+        txType,
+        accountAddress,
+        sourceChainIds,
+        targetChainId,
+        sourceFunds,
+      });
 
       setLoadingText('Preparing user operation...');
       const { estimatedGasFeesOnTargetChain, ...preparedMultiChainUserOperation } = await prepareCrosschainUserOp({
@@ -70,10 +71,11 @@ export default function Main({ account, type = SignerType.WEBAUTHN }: WalletProp
       console.log('source op receipts', receipts);
 
       setLoadingText("Waiting for target op receipt...");
-      const targetBundlerClient = getBundlerClient(TARGET_CHAIN.id);
+      const targetBundlerClient = getBundlerClient(targetChainId);
       const targetReceipt = await targetBundlerClient.waitForUserOperationReceipt({ hash: targetUserOperationHash });
       console.log('targetReceipt', targetReceipt);
 
+      setBlockExplorerUrl(getBlockExplorerUrl(targetChainId));
       setFinalUserOpHash(targetReceipt.receipt.transactionHash);
     } catch (error) {
       console.error('Error executing crosschain user operation', error);
@@ -100,17 +102,6 @@ export default function Main({ account, type = SignerType.WEBAUTHN }: WalletProp
           <div>{loadingText}</div>
         ) : (
           <>
-            <div className="flex items-center gap-2 w-full mb-4">
-              <p className="text-xs bg-blue-100 p-1 rounded-md text-gray-800">
-                <b>Source Chain 1:</b> {SOURCE_CHAIN_1.name}
-              </p>
-              <p className="text-xs bg-violet-100 p-1 rounded-md text-gray-800">
-                <b>Source Chain 2:</b> {SOURCE_CHAIN_2.name}
-              </p>
-              <p className="text-xs bg-violet-100 p-1 rounded-md text-gray-800">
-                <b>Target Chain:</b> {TARGET_CHAIN.name}
-              </p>
-            </div>
             <div className="flex items-center justify-between gap-2 w-full">
               <p className="text-xs bg-gray-100 p-2 rounded-md text-gray-800">
                 Smart Account: <b className="text-sm">{accountAddress}</b>
@@ -159,14 +150,14 @@ export default function Main({ account, type = SignerType.WEBAUTHN }: WalletProp
                 </Modal>
               )
             }
-            {finalUserOpHash && (
+            {finalUserOpHash && blockExplorerUrl && (
               <div className="mt-4 w-full bg-gray-200 p-2 rounded-md">
                 <p className="text-xs">
                   Target Transaction Hash:{" "}
                   <a
                     className="text-xs text-blue-400 font-bold underline"
                     target="_blank"
-                    href={`https://sepolia.etherscan.io/tx/${finalUserOpHash}`}
+                    href={`${blockExplorerUrl}/tx/${finalUserOpHash}`}
                   >
                     {finalUserOpHash}
                   </a>

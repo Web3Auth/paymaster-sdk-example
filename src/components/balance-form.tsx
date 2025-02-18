@@ -1,6 +1,6 @@
 "use client";
 
-import { SOURCE_CHAIN_1, SOURCE_CHAIN_1_RPC_URL, SOURCE_CHAIN_2, SOURCE_CHAIN_2_RPC_URL, TARGET_CHAIN, TARGET_CHAIN_RPC_URL } from "@/config";
+import { CHAIN_1, CHAIN_1_RPC_URL, CHAIN_2, CHAIN_2_RPC_URL, CHAIN_3, CHAIN_3_RPC_URL } from "@/config";
 import { queryErc20TokenBalance } from "@/utils/token";
 import { useEffect, useState } from "react";
 import { Address } from "viem";
@@ -20,9 +20,9 @@ export default function BalanceForm({ account, onClose }: IBalanceFormProps) {
     (async () => {
       try {
         const [sourceBalance1, sourceBalance2, targetBalance] = await Promise.all([
-          queryErc20TokenBalance(account, SOURCE_CHAIN_1, SOURCE_CHAIN_1_RPC_URL),
-          queryErc20TokenBalance(account, SOURCE_CHAIN_2, SOURCE_CHAIN_2_RPC_URL),
-          queryErc20TokenBalance(account, TARGET_CHAIN, TARGET_CHAIN_RPC_URL),
+          queryErc20TokenBalance(account, CHAIN_1, CHAIN_1_RPC_URL),
+          queryErc20TokenBalance(account, CHAIN_2, CHAIN_2_RPC_URL),
+          queryErc20TokenBalance(account, CHAIN_3, CHAIN_3_RPC_URL),
         ])
   
         setSourceBalance1(sourceBalance1);
@@ -48,19 +48,19 @@ export default function BalanceForm({ account, onClose }: IBalanceFormProps) {
               <p className="text-xs bg-gray-100 p-2 rounded-md text-gray-800">
                 Account: <b className="text-sm">{account}</b>
               </p>
-              <p className="text-xs font-bold">{SOURCE_CHAIN_1.name}</p>
+              <p className="text-xs font-bold">{CHAIN_1.name}</p>
               <div className="flex items-center gap-2 w-full bg-gray-100 p-2 rounded-md">
                 <p className="text-xs bg-gray-100 p-2 rounded-md text-gray-800">
                   W3P Balance: <b className="text-sm">{sourceBalance1}</b>
                 </p>
               </div>
-              <p className="text-xs font-bold">{SOURCE_CHAIN_2.name}</p>
+              <p className="text-xs font-bold">{CHAIN_2.name}</p>
               <div className="flex items-center gap-2 w-full bg-gray-100 p-2 rounded-md">
                 <p className="text-xs bg-gray-100 p-2 rounded-md text-gray-800">
                   W3P Balance: <b className="text-sm">{sourceBalance2}</b>
                 </p>
               </div>
-              <p className="text-xs font-bold">{TARGET_CHAIN.name}</p>
+              <p className="text-xs font-bold">{CHAIN_3.name}</p>
               <div className="flex items-center gap-2 w-full bg-gray-100 p-2 rounded-md">
                 <p className="text-xs bg-gray-100 p-2 rounded-md text-gray-800">
                   W3P Balance: <b className="text-sm">{targetBalance}</b>

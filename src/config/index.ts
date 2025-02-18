@@ -2,29 +2,29 @@ import { PaymasterSettings, PaymasterVersion } from "@web3auth/chain-abstraction
 import { Address, parseUnits } from "viem";
 import { sepolia, baseSepolia, polygonAmoy } from "viem/chains";
 
-export const SOURCE_CHAIN_1 = baseSepolia;
-export const SOURCE_CHAIN_2 = polygonAmoy;
-export const TARGET_CHAIN = sepolia;
+export const CHAIN_1 = baseSepolia;
+export const CHAIN_2 = polygonAmoy;
+export const CHAIN_3 = sepolia;
 
 const proxyRpcUrl = "https://rpc-proxy.web3auth.dev";
-export const SOURCE_CHAIN_1_RPC_URL = `${proxyRpcUrl}?network=${SOURCE_CHAIN_1.id}`;
-export const SOURCE_CHAIN_2_RPC_URL = `${proxyRpcUrl}?network=${SOURCE_CHAIN_2.id}`;
-export const TARGET_CHAIN_RPC_URL = `${proxyRpcUrl}?network=${TARGET_CHAIN.id}`;
+export const CHAIN_1_RPC_URL = `${proxyRpcUrl}?network=${CHAIN_1.id}`;
+export const CHAIN_2_RPC_URL = `${proxyRpcUrl}?network=${CHAIN_2.id}`;
+export const CHAIN_3_RPC_URL = `${proxyRpcUrl}?network=${CHAIN_3.id}`;
 
 export const MULTI_CHAIN_RPC_INFO = [
-  { chainId: SOURCE_CHAIN_1.id, rpcUrl: SOURCE_CHAIN_1_RPC_URL },
-  { chainId: SOURCE_CHAIN_2.id, rpcUrl: SOURCE_CHAIN_2_RPC_URL },
-  { chainId: TARGET_CHAIN.id, rpcUrl: TARGET_CHAIN_RPC_URL },
+  { chainId: CHAIN_1.id, rpcUrl: CHAIN_1_RPC_URL },
+  { chainId: CHAIN_2.id, rpcUrl: CHAIN_2_RPC_URL },
+  { chainId: CHAIN_3.id, rpcUrl: CHAIN_3_RPC_URL },
 ];
 
 export const WETH_CONTRACT_MAP: Record<number, Address> = {
-  [SOURCE_CHAIN_1.id]: "0x4200000000000000000000000000000000000006",
-  [SOURCE_CHAIN_2.id]: "0x52eF3d68BaB452a294342DC3e5f464d7f610f72E",
-  [TARGET_CHAIN.id]: "0x4200000000000000000000000000000000000006",
+  [CHAIN_1.id]: "0x4200000000000000000000000000000000000006",
+  [CHAIN_2.id]: "0x52eF3d68BaB452a294342DC3e5f464d7f610f72E",
+  [CHAIN_3.id]: "0x4200000000000000000000000000000000000006",
 };
-export const INPUT_TOKEN_1 = WETH_CONTRACT_MAP[SOURCE_CHAIN_1.id];
-export const INPUT_TOKEN_2 = WETH_CONTRACT_MAP[SOURCE_CHAIN_2.id];
-export const OUTPUT_TOKEN = WETH_CONTRACT_MAP[TARGET_CHAIN.id];
+export const INPUT_TOKEN_1 = WETH_CONTRACT_MAP[CHAIN_1.id];
+export const INPUT_TOKEN_2 = WETH_CONTRACT_MAP[CHAIN_2.id];
+export const OUTPUT_TOKEN = WETH_CONTRACT_MAP[CHAIN_3.id];
 
 export const WEB3PAY_API_URL = "https://lrc-accounts.web3auth.io/api";
 
