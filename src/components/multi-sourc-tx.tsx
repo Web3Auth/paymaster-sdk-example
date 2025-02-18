@@ -20,7 +20,7 @@ export default function MultiSourceTx({
 }: IMultiSourceTxProps) {
   return (
     <div>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 mb-2">
         <p className="text-sm font-bold text-gray-900">Source Chain 1:</p>
         <div className="flex gap-2">
           <Dropdown options={[CHAIN_1, CHAIN_2, CHAIN_3]} onSelect={handleSourceChain1Selected} />
@@ -35,7 +35,7 @@ export default function MultiSourceTx({
           </div>
         </div>
       </div>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 mb-2">
         <p className="text-sm font-bold text-gray-900">Source Chain 2:</p>
         <div className="flex gap-2">
           <Dropdown options={[CHAIN_1, CHAIN_2, CHAIN_3]} onSelect={handleSourceChain2Selected} />

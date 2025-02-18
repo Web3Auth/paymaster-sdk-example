@@ -27,11 +27,11 @@ export default function TxForm({ type, onCancel, onExecute }: ITxFormProps) {
   function getTextForTxType() {
     switch (type) {
       case CrosschainTransactionType.CROSSCHAIN_SPONSORSHIP:
-        return "Crosschain Sponsorship";
+        return "Crosschain Transaction Sponsorship";
       case CrosschainTransactionType.TRANSFER_LIQUIDITY:
-        return "Transfer Liquidity";
+        return "Crosschain Liquidity Transfer";
       case CrosschainTransactionType.MULTI_SOURCE:
-        return "Multi-Source Liquidity Transfer";
+        return "Cross Liquidity Transfer (from multiple source chains)";
       default:
         return "Unknown Transaction Type";
     }
@@ -40,11 +40,23 @@ export default function TxForm({ type, onCancel, onExecute }: ITxFormProps) {
   function getDescriptionForTxType() {
     switch (type) {
       case CrosschainTransactionType.CROSSCHAIN_SPONSORSHIP:
-        return "Sponsor a crosschain transaction";
+        return `
+        Use a Test ERC-20 token from the source chain to pay fees 
+        for minting a Test Token on the target chain.
+        (Mint amount: 10 W3PTEST)
+        `;
       case CrosschainTransactionType.TRANSFER_LIQUIDITY:
-        return "Transfer liquidity to a different chain";
+        return `
+        Transfer Test ERC-20 token from the selected source chain 
+        to the selected target chain.
+        (Transfer amount: 10 W3PTEST)
+        `;
       case CrosschainTransactionType.MULTI_SOURCE:
-        return "Transfer liquidity from multiple source chains to a target chain";
+        return `
+        Transfer Test ERC-20 token from multiple source chains 
+        to the selected target chain.
+        (Transfer amount: 10 W3PTEST)
+        `;
       default:
         return "Unknown Transaction Type";
     }
@@ -79,9 +91,11 @@ export default function TxForm({ type, onCancel, onExecute }: ITxFormProps) {
   }
 
   return (
-    <div className="flex flex-col gap-2 min-w-xl p-4">
+    <div className="flex flex-col gap-2 w-xl min-w-xl p-4">
       <p className="font-bold">{getTextForTxType()}</p>
-      <p className="text-xs text-gray-500">{getDescriptionForTxType()}</p>
+      <div className="flex flex-col bg-gray-100 rounded-md p-2">
+        <p className="text-xs text-gray-500 whitespace-pre text-center ml-[-15px]">{getDescriptionForTxType()}</p>
+      </div>
       {/** Source Chain */}
       {
         type === CrosschainTransactionType.MULTI_SOURCE ? (
