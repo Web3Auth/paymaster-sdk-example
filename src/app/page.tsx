@@ -1,22 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { SmartAccount } from "viem/account-abstraction";
 
 import Menu from "@/components/menu";
-import Wallet from "@/components/wallet";
-import { MultiChainAccount, SignerType } from "@web3auth/paymaster-sdk";
+import Main from "@/components/main";
+import { MultiChainAccount } from "@web3auth/chain-abstraction-sdk";
+import { SignerType } from "@web3auth/erc7579";
 
 export default function Home() {
-  const [account, setAccount] = useState<SmartAccount | MultiChainAccount>();
+  const [account, setAccount] = useState<MultiChainAccount>();
   const [signerType, setSignerType] = useState<SignerType>(SignerType.ECDSA);
 
   async function handleAccountCreated(
-    account: SmartAccount | MultiChainAccount,
+    account: MultiChainAccount,
     type: SignerType
   ) {
     setAccount(account);
     setSignerType(type);
+    const address = await account.getAddress();
+    console.log(address);
   }
 
   return (
@@ -27,7 +29,7 @@ export default function Home() {
         </p>
       </div>
       {account ? (
-        <Wallet account={account} type={signerType} />
+        <Main account={account} type={signerType} />
       ) : (
         <Menu onAccountCreated={handleAccountCreated} />
       )}

@@ -1,10 +1,10 @@
-import { PaymasterSettings, PaymasterVersion } from "@web3auth/paymaster-sdk";
-import { Address } from "viem";
-import { optimismSepolia, baseSepolia, polygonAmoy } from "viem/chains";
+import { PaymasterSettings, PaymasterVersion } from "@web3auth/chain-abstraction-sdk";
+import { Address, parseUnits } from "viem";
+import { sepolia, baseSepolia, polygonAmoy } from "viem/chains";
 
 export const SOURCE_CHAIN_1 = baseSepolia;
 export const SOURCE_CHAIN_2 = polygonAmoy;
-export const TARGET_CHAIN = optimismSepolia;
+export const TARGET_CHAIN = sepolia;
 
 const proxyRpcUrl = "https://rpc-proxy.web3auth.dev";
 export const SOURCE_CHAIN_1_RPC_URL = `${proxyRpcUrl}?network=${SOURCE_CHAIN_1.id}`;
@@ -43,3 +43,5 @@ export const MULTI_CHAIN_PAYMASTER_SETTINGS: PaymasterSettings = {
   chains: MULTI_CHAIN_RPC_INFO,
   paymasterVersion: PaymasterVersion.V0_2_0,
 };
+
+export const TEST_TRANSFER_AMOUNT = parseUnits('10', 6);

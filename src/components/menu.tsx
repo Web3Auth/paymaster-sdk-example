@@ -3,24 +3,17 @@
 import {
   MultiChainAccount,
   MultiChainKernelAccount,
-  SignerType,
-  WebAuthnSignerService,
-} from "@web3auth/paymaster-sdk";
-import { toKernelSmartAccount } from "permissionless/accounts";
-import { createPublicClient, http } from "viem";
-import { SmartAccount } from "viem/account-abstraction";
-import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
+} from "@web3auth/chain-abstraction-sdk";
+import { SignerType, WebAuthnSignerService } from "@web3auth/erc7579";
 import {
   MULTI_CHAIN_RPC_INFO,
-  SOURCE_CHAIN_1,
-  SOURCE_CHAIN_1_RPC_URL,
   WEB3PAY_API_URL,
 } from "@/config";
 import { useState } from "react";
 
 interface MenuProps {
   onAccountCreated: (
-    account: SmartAccount | MultiChainAccount,
+    account: MultiChainAccount,
     type: SignerType
   ) => void;
 }
@@ -31,20 +24,6 @@ export default function Menu({ onAccountCreated }: MenuProps) {
   function handleProviderChange(e: React.ChangeEvent<HTMLInputElement>) {
     const _provider = e.target.value as "kernel" | "nexus";
     setProvider(_provider);
-  }
-
-  async function createECDSAAccount() {
-    const privKey = generatePrivateKey();
-    const owner = privateKeyToAccount(privKey);
-    const client = createPublicClient({
-      chain: SOURCE_CHAIN_1,
-      transport: http(SOURCE_CHAIN_1_RPC_URL),
-    });
-    const account: SmartAccount = await toKernelSmartAccount({
-      client,
-      owners: [owner],
-    });
-    onAccountCreated(account, SignerType.ECDSA);
   }
 
   async function createWebAuthnAccount() {
@@ -113,14 +92,6 @@ export default function Menu({ onAccountCreated }: MenuProps) {
           </label>
         </div>
       </div>
-
-      <button
-        className="bg-blue-200 py-2 px-4 rounded-md text-sm text-white text-gray-900"
-        disabled={true}
-        onClick={createECDSAAccount}
-      >
-        Create ECDSA Account
-      </button>
       <button
         className="bg-blue-400 py-2 px-4 rounded-md text-sm text-white"
         onClick={createWebAuthnAccount}
