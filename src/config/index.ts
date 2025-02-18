@@ -6,7 +6,7 @@ export const CHAIN_1 = baseSepolia;
 export const CHAIN_2 = polygonAmoy;
 export const CHAIN_3 = sepolia;
 
-const proxyRpcUrl = "https://rpc-proxy.web3auth.dev";
+const proxyRpcUrl = "https://rpc-proxy.web3auth.io";
 export const CHAIN_1_RPC_URL = `${proxyRpcUrl}?network=${CHAIN_1.id}`;
 export const CHAIN_2_RPC_URL = `${proxyRpcUrl}?network=${CHAIN_2.id}`;
 export const CHAIN_3_RPC_URL = `${proxyRpcUrl}?network=${CHAIN_3.id}`;
