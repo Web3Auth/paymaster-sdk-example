@@ -166,10 +166,22 @@ export default function Main({ account, type = SignerType.WEBAUTHN }: WalletProp
                 </Modal>
               )
             }
+            <div className="mt-4 w-full bg-gray-100 p-2 rounded-md">
+              <p className="text-xs text-gray-700">
+                Target Transaction Hash:&nbsp;
+                <a
+                  className="text-xs text-blue-400 font-bold underline"
+                  target="_blank"
+                  href={`${blockExplorerUrl}/tx/${finalUserOpHash}`}
+                >
+                  {finalUserOpHash}
+                </a>
+              </p>
+            </div>
             {finalUserOpHash && blockExplorerUrl && (
-              <div className="mt-4 w-full bg-gray-200 p-2 rounded-md">
-                <p className="text-xs text-gray-700 dark:text-gray-100">
-                  Target Transaction Hash:{" "}
+              <div className="mt-4 w-full bg-gray-100 p-2 rounded-md">
+                <p className="text-xs text-gray-700">
+                  Target Transaction Hash:&nbsp;
                   <a
                     className="text-xs text-blue-400 font-bold underline"
                     target="_blank"
