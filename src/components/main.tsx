@@ -36,7 +36,7 @@ export default function Main({ account, type = SignerType.WEBAUTHN }: WalletProp
     setTxModalOpen(true);
   }
 
-  async function handlePrepareTx(sourceChainIds: number[], targetChainId: number, sourceFunds?: Hex[]) {
+  async function handlePrepareTx(sourceChainIds: number[], targetChainId: number, amount: number, sourceFunds?: Hex[]) {
     setLoading(true);
     try {
       const paymaster = await initWeb3AuthPaymaster();
@@ -47,6 +47,7 @@ export default function Main({ account, type = SignerType.WEBAUTHN }: WalletProp
         sourceChainIds,
         targetChainId,
         sourceFunds,
+        amount,
       });
       console.log("parsedCrossChainUserOpParams", parsedCrossChainUserOpParams);
 
@@ -61,6 +62,7 @@ export default function Main({ account, type = SignerType.WEBAUTHN }: WalletProp
         ...preparedOp,
         sourceChainIds,
         targetChainId,
+        txAmount: amount,
         sourceAmount1: sourceFunds?.[0],
         sourceAmount2: sourceFunds?.[1],
       });

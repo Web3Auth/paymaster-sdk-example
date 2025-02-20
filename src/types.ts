@@ -10,6 +10,7 @@ export enum CrosschainTransactionType {
 export type PreparedCrossChainUserOp = Web3AuthPrepareMultiChainUserOperationReturnType & {
   sourceChainIds: number[];
   targetChainId: number;
+  txAmount: number;
   sourceAmount1?: Hex;
   sourceAmount2?: Hex;
 }

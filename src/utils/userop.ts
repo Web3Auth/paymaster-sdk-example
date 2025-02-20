@@ -9,13 +9,15 @@ export const parseCrosschainUserOpData = (params: {
   accountAddress: Address;
   sourceChainIds: number[];
   targetChainId: number;
+  amount: number;
   inputTokens?: Address[];
   outputToken?: Address;
   sourceFunds?: Hex[];
 }) => {
-  const { txType, accountAddress, sourceChainIds, targetChainId } = params;
+  const { txType, accountAddress, sourceChainIds, targetChainId, amount } = params;
   const inputTokens = params.inputTokens || [WEB3PAY_TEST_TOKEN];
   const outputToken = params.outputToken || WEB3PAY_TEST_TOKEN;
+  const txAmount = parseUnits(amount.toString(), 6);
   let targetAmount: bigint | undefined
   let calls: Call[] = [];
   let sourceFunds: Hex[] | undefined;
@@ -25,10 +27,10 @@ export const parseCrosschainUserOpData = (params: {
   }
 
   if (txType === CrosschainTransactionType.TRANSFER_LIQUIDITY) {
-    targetAmount = parseUnits('10', 6);
+    targetAmount = txAmount;
     calls = [createTokenTransferCall(WEB3PAY_TEST_TOKEN, accountAddress, targetAmount)]
   } else if (txType === CrosschainTransactionType.MULTI_SOURCE) {
-    targetAmount = parseUnits('10', 6);
+    targetAmount = txAmount;
     calls = [createTokenTransferCall(WEB3PAY_TEST_TOKEN, accountAddress, targetAmount)]
     inputTokens.push(WEB3PAY_TEST_TOKEN);
     if (sourceChainIds.length < 2) {
@@ -42,7 +44,7 @@ export const parseCrosschainUserOpData = (params: {
     }
     sourceFunds = params.sourceFunds
   } else {
-    calls = [createTestTokenMintCall(accountAddress)];
+    calls = [createTestTokenMintCall(accountAddress, txAmount)];
   }
 
   return {

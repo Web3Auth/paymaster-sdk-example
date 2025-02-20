@@ -1,6 +1,6 @@
 "use client";
 
-import { TEST_TRANSFER_AMOUNT, SUPPORTED_CHAINS } from "@/config";
+import { SUPPORTED_CHAINS } from "@/config";
 import { CrosschainTransactionType, PreparedCrossChainUserOp } from "@/types";
 import { useEffect, useState } from "react";
 import { formatUnits, Hex, parseUnits, toHex } from "viem";
@@ -11,7 +11,7 @@ import TxDetails from "./tx-details";
 interface ITxFormProps {
   type: CrosschainTransactionType;
   onCancel: () => void;
-  onPrepare: (sourceChainIds: number[], targetChainId: number, sourceFunds?: Hex[]) => Promise<void>;
+  onPrepare: (sourceChainIds: number[], targetChainId: number, targetAmount: number, sourceFunds?: Hex[]) => Promise<void>;
   onExecute: () => Promise<void>;
   preparedTxDetails: PreparedCrossChainUserOp | null;
 }
@@ -22,6 +22,7 @@ export default function TxForm({ type, onCancel, onPrepare, onExecute, preparedT
   const [sourceChainId1, setSourceChainId1] = useState<number | undefined>(undefined);
   const [sourceChainId2, setSourceChainId2] = useState<number | undefined>(undefined);
   const [targetChainId, setTargetChainId] = useState<number | undefined>(undefined);
+  const [targetAmount, setTargetAmount] = useState<number>(0);
 
   function getTextForTxType() {
     switch (type) {
@@ -41,20 +42,17 @@ export default function TxForm({ type, onCancel, onPrepare, onExecute, preparedT
       case CrosschainTransactionType.CROSSCHAIN_SPONSORSHIP:
         return `
         Use a Test ERC-20 token from the source chain to pay fees 
-        for minting a Test Token on the target chain.
-        (Mint amount: 100 W3PTEST)
+        for minting Test Token on the target chain.
         `;
       case CrosschainTransactionType.TRANSFER_LIQUIDITY:
         return `
         Transfer Test ERC-20 token from the selected source chain 
         to the selected target chain.
-        (Transfer amount: 10 W3PTEST)
         `;
       case CrosschainTransactionType.MULTI_SOURCE:
         return `
         Transfer Test ERC-20 token from multiple source chains 
         to the selected target chain.
-        (Transfer amount: 10 W3PTEST)
         `;
       default:
         return "Unknown Transaction Type";
@@ -81,7 +79,7 @@ export default function TxForm({ type, onCancel, onPrepare, onExecute, preparedT
     if (!targetChainId) return;
 
     const sourceChainIds = [sourceChainId1, sourceChainId2].filter((chainId) => chainId !== undefined) as number[];
-    await onPrepare(sourceChainIds, targetChainId, sourceFunds);
+    await onPrepare(sourceChainIds, targetChainId, targetAmount, sourceFunds);
   }
 
   useEffect(() => {
@@ -93,6 +91,7 @@ export default function TxForm({ type, onCancel, onPrepare, onExecute, preparedT
       setSourceAmount1(srcAmount1);
       const srcAmount2 = Number(formatUnits(BigInt(preparedTxDetails.sourceAmount2 ?? "0"), 6));
       setSourceAmount2(srcAmount2);
+      setTargetAmount(preparedTxDetails.txAmount);
     }
   }, [preparedTxDetails]);
 
@@ -127,15 +126,17 @@ export default function TxForm({ type, onCancel, onPrepare, onExecute, preparedT
         <p className="text-sm font-bold text-gray-900">Target Chain:</p>
         <div className="flex gap-2">
           <Dropdown options={SUPPORTED_CHAINS} onSelect={handleTargetChainSelected} value={targetChainId} />
+          <div className="flex items-center gap-1">
+            <input
+              type="number"
+              value={targetAmount}
+              onChange={(e) => setTargetAmount(Number(e.target.value))}
+              className="px-1 py-2 text-sm border border-gray-300 rounded-md bg-gray-100 w-40 text-right"
+            />
+            <label className="text-xs font-bold text-gray-600">W3P</label>
+          </div>
         </div>
       </div>
-      {type === CrosschainTransactionType.MULTI_SOURCE && (
-        <div className="flex items-center gap-2 bg-gray-100 p-2 rounded-md">
-          <p className="text-xs font-bold text-gray-600">
-            Transaction amount to target: <b>{formatUnits(TEST_TRANSFER_AMOUNT, 6)}&nbsp;W3P</b>
-          </p>
-        </div>
-      )}
 
       {preparedTxDetails && (
         <TxDetails preparedTxDetails={preparedTxDetails} />
