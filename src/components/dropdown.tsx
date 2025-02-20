@@ -8,9 +8,10 @@ interface DropdownProps {
   options: Chain[];
   onSelect: (option: number) => void;
   placeholder?: string;
+  value?: number;
 }
 
-const Dropdown: React.FC<DropdownProps> = ({ options, onSelect, placeholder = "Select an option" }) => {
+const Dropdown: React.FC<DropdownProps> = ({ options, onSelect, placeholder = "Select an option", value }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selected, setSelected] = useState<number | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -37,6 +38,12 @@ const Dropdown: React.FC<DropdownProps> = ({ options, onSelect, placeholder = "S
     }
     return placeholder;
   };
+
+  useEffect(() => {
+    if (value) {
+      setSelected(value);
+    }
+  }, [value]);
 
   return (
     <div className="relative w-64" ref={dropdownRef}>

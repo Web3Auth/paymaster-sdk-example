@@ -2,21 +2,24 @@
 
 import { CHAIN_3, CHAIN_1, CHAIN_2, TEST_TRANSFER_AMOUNT } from "@/config";
 import { CrosschainTransactionType } from "@/types";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { formatUnits, Hex, parseUnits, toHex } from "viem";
 import Dropdown from "./dropdown";
 import MultiSourceTx from "./multi-sourc-tx";
+import { parseW3PTestTokenValue } from "@/utils/token";
 
 interface ITxFormProps {
   type: CrosschainTransactionType;
   onCancel: () => void;
-  onPrepare: (sourceChainIds: number[], targetChainId: number, sourceFunds?: Hex[]) => void;
-  onExecute: () => void;
+  onPrepare: (sourceChainIds: number[], targetChainId: number, sourceFunds?: Hex[]) => Promise<void>;
+  onExecute: () => Promise<void>;
   preparedTxDetails: {
     estimatedGasFeesOnTargetChain: bigint;
     totalTransactionAmountOnTargetChain: bigint;
     sourceChainIds: number[];
     targetChainId: number;
+    sourceAmount1?: Hex;
+    sourceAmount2?: Hex;
   } | null;
 }
 
@@ -77,7 +80,15 @@ export default function TxForm({ type, onCancel, onPrepare, onExecute, preparedT
     setTargetChainId(chainId);
   }
 
-  function handlePrepareClick() {
+  function computeNetAmount(preparedTxDetails: {
+    estimatedGasFeesOnTargetChain: bigint;
+    totalTransactionAmountOnTargetChain: bigint;
+  }) {
+    const netAmount = preparedTxDetails.totalTransactionAmountOnTargetChain - preparedTxDetails.estimatedGasFeesOnTargetChain;
+    return parseW3PTestTokenValue(netAmount);
+  }
+
+  async function handlePrepareClick() {
     let sourceFunds: Hex[] | undefined;
     if (type === CrosschainTransactionType.MULTI_SOURCE) {
       sourceFunds = [parseUnits(sourceAmount1.toString(), 6), parseUnits(sourceAmount2.toString(), 6)].map((n) => toHex(n));
@@ -85,8 +96,21 @@ export default function TxForm({ type, onCancel, onPrepare, onExecute, preparedT
     if (!targetChainId) return;
 
     const sourceChainIds = [sourceChainId1, sourceChainId2].filter((chainId) => chainId !== undefined) as number[];
-    onPrepare(sourceChainIds, targetChainId, sourceFunds);
+    await onPrepare(sourceChainIds, targetChainId, sourceFunds);
   }
+
+  useEffect(() => {
+    if (preparedTxDetails) {
+      console.log(preparedTxDetails);
+      setSourceChainId1(preparedTxDetails.sourceChainIds[0]);
+      setSourceChainId2(preparedTxDetails.sourceChainIds[1]);
+      setTargetChainId(preparedTxDetails.targetChainId);
+      const srcAmount1 = Number(formatUnits(BigInt(preparedTxDetails.sourceAmount1 ?? "0"), 6));
+      setSourceAmount1(srcAmount1);
+      const srcAmount2 = Number(formatUnits(BigInt(preparedTxDetails.sourceAmount2 ?? "0"), 6));
+      setSourceAmount2(srcAmount2);
+    }
+  }, [preparedTxDetails]);
 
   return (
     <div className="flex flex-col gap-2 w-xl min-w-xl p-4">
@@ -103,12 +127,14 @@ export default function TxForm({ type, onCancel, onPrepare, onExecute, preparedT
           sourceAmount1OnChange={setSourceAmount1}
           sourceAmount2={sourceAmount2}
           sourceAmount2OnChange={setSourceAmount2}
+          sourceChainId1={sourceChainId1}
+          sourceChainId2={sourceChainId2}
         />
       ) : (
         <div className="flex flex-col gap-2">
           <p className="text-sm font-bold text-gray-900">Source Chain:</p>
           <div className="flex gap-2">
-            <Dropdown options={[CHAIN_1, CHAIN_2, CHAIN_3]} onSelect={handleSourceChainId1Selected} />
+            <Dropdown options={[CHAIN_1, CHAIN_2, CHAIN_3]} onSelect={handleSourceChainId1Selected} value={sourceChainId1} />
           </div>
         </div>
       )}
@@ -116,7 +142,7 @@ export default function TxForm({ type, onCancel, onPrepare, onExecute, preparedT
       <div className="flex flex-col gap-2">
         <p className="text-sm font-bold text-gray-900">Target Chain:</p>
         <div className="flex gap-2">
-          <Dropdown options={[CHAIN_1, CHAIN_2, CHAIN_3]} onSelect={handleTargetChainSelected} />
+          <Dropdown options={[CHAIN_1, CHAIN_2, CHAIN_3]} onSelect={handleTargetChainSelected} value={targetChainId} />
         </div>
       </div>
       {type === CrosschainTransactionType.MULTI_SOURCE && (
@@ -131,11 +157,11 @@ export default function TxForm({ type, onCancel, onPrepare, onExecute, preparedT
         <div className="mt-4 p-4 bg-gray-100 rounded-md">
           <h3 className="text-lg font-bold mb-2">Transaction Details</h3>
           <div className="space-y-2">
-            <p>Estimated Gas Fees: {preparedTxDetails.estimatedGasFeesOnTargetChain.toString()} W3PTEST</p>
-            <p>Total Transaction Amount: {preparedTxDetails.totalTransactionAmountOnTargetChain.toString()} W3PTEST</p>
+            <p>Estimated Gas Fees: {parseW3PTestTokenValue(preparedTxDetails.estimatedGasFeesOnTargetChain)}</p>
+            <p>Total Transaction Amount: {parseW3PTestTokenValue(preparedTxDetails.totalTransactionAmountOnTargetChain)}</p>
             <p>
-              Net Receivable Amount:{" "}
-              {(preparedTxDetails.totalTransactionAmountOnTargetChain - preparedTxDetails.estimatedGasFeesOnTargetChain).toString()} W3PTEST
+              Net Receivable Amount:&nbsp;
+              {computeNetAmount(preparedTxDetails)}
             </p>
           </div>
         </div>

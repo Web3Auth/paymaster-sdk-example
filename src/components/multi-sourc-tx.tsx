@@ -4,6 +4,8 @@ import { CHAIN_1, CHAIN_2, CHAIN_3 } from "@/config";
 interface IMultiSourceTxProps {
   handleSourceChain1Selected: (chainId: number) => void;
   handleSourceChain2Selected: (chainId: number) => void;
+  sourceChainId1?: number;
+  sourceChainId2?: number;
   sourceAmount1: number;
   sourceAmount1OnChange: (amount: number) => void;
   sourceAmount2: number;
@@ -13,6 +15,8 @@ interface IMultiSourceTxProps {
 export default function MultiSourceTx({
   handleSourceChain1Selected,
   handleSourceChain2Selected,
+  sourceChainId1,
+  sourceChainId2,
   sourceAmount1,
   sourceAmount1OnChange,
   sourceAmount2,
@@ -23,7 +27,7 @@ export default function MultiSourceTx({
       <div className="flex flex-col gap-2 mb-2">
         <p className="text-sm font-bold text-gray-900">Source Chain 1:</p>
         <div className="flex gap-2">
-          <Dropdown options={[CHAIN_1, CHAIN_2, CHAIN_3]} onSelect={handleSourceChain1Selected} />
+          <Dropdown options={[CHAIN_1, CHAIN_2, CHAIN_3]} onSelect={handleSourceChain1Selected} value={sourceChainId1} />
           <div className="flex items-center gap-1">
             <input
               type="number"
@@ -38,7 +42,7 @@ export default function MultiSourceTx({
       <div className="flex flex-col gap-2 mb-2">
         <p className="text-sm font-bold text-gray-900">Source Chain 2:</p>
         <div className="flex gap-2">
-          <Dropdown options={[CHAIN_1, CHAIN_2, CHAIN_3]} onSelect={handleSourceChain2Selected} />
+          <Dropdown options={[CHAIN_1, CHAIN_2, CHAIN_3]} onSelect={handleSourceChain2Selected} value={sourceChainId2} />
           <div className="flex items-center gap-1">
             <input
               type="number"

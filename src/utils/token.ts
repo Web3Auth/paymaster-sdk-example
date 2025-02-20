@@ -1,4 +1,4 @@
-import { Address, Chain, createPublicClient, encodeFunctionData, erc20Abi, http, parseAbi, parseUnits } from "viem"
+import { Address, Chain, createPublicClient, encodeFunctionData, erc20Abi, formatUnits, http, parseAbi, parseUnits } from "viem"
 import { WEB3PAY_TEST_TOKEN } from "@/config"
 
 export const queryErc20TokenBalance = async (address: Address, chain: Chain, rpcUrl: string, tokenAddress: Address = WEB3PAY_TEST_TOKEN) => {
@@ -38,3 +38,8 @@ export const createTokenTransferCall = (tokenAddress: Address, receiverAddress: 
   }
 }
 
+export const parseW3PTestTokenValue = (amount: bigint) => {
+  let value = formatUnits(amount, 6);
+  value = parseFloat(value).toFixed(4);
+  return `${value} W3PTEST`;
+}

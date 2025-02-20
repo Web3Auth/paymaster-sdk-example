@@ -33,6 +33,8 @@ export default function Main({ account, type = SignerType.WEBAUTHN }: WalletProp
     | (Web3AuthPrepareMultiChainUserOperationReturnType & {
         sourceChainIds: number[];
         targetChainId: number;
+        sourceAmount1?: Hex;
+        sourceAmount2?: Hex;
       })
     | null
   >(null);
@@ -67,6 +69,8 @@ export default function Main({ account, type = SignerType.WEBAUTHN }: WalletProp
         ...preparedOp,
         sourceChainIds,
         targetChainId,
+        sourceAmount1: sourceFunds?.[0],
+        sourceAmount2: sourceFunds?.[1],
       });
     } catch (error) {
       console.error("Error preparing crosschain user operation", error);
