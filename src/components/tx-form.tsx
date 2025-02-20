@@ -131,11 +131,11 @@ export default function TxForm({ type, onCancel, onPrepare, onExecute, preparedT
         <div className="mt-4 p-4 bg-gray-100 rounded-md">
           <h3 className="text-lg font-bold mb-2">Transaction Details</h3>
           <div className="space-y-2">
-            <p>Estimated Gas Fees: {preparedTxDetails.estimatedGasFeesOnTargetChain.toString()} wei</p>
-            <p>Total Transaction Amount: {preparedTxDetails.totalTransactionAmountOnTargetChain.toString()} wei</p>
+            <p>Estimated Gas Fees: {preparedTxDetails.estimatedGasFeesOnTargetChain.toString()} W3PTEST</p>
+            <p>Total Transaction Amount: {preparedTxDetails.totalTransactionAmountOnTargetChain.toString()} W3PTEST</p>
             <p>
               Net Receivable Amount:{" "}
-              {(preparedTxDetails.totalTransactionAmountOnTargetChain - preparedTxDetails.estimatedGasFeesOnTargetChain).toString()} wei
+              {(preparedTxDetails.totalTransactionAmountOnTargetChain - preparedTxDetails.estimatedGasFeesOnTargetChain).toString()} W3PTEST
             </p>
           </div>
         </div>

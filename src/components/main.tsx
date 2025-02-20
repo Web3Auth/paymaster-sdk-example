@@ -1,6 +1,6 @@
 "use client";
 
-import { MultiChainAccount, Web3AuthPrepareMultiChainUserOperationReturnType } from "@web3auth/chain-abstraction-sdk";
+import { MultiChainAccount, Web3AuthPaymaster, Web3AuthPrepareMultiChainUserOperationReturnType } from "@web3auth/chain-abstraction-sdk";
 import { SignerType } from "@web3auth/erc7579";
 import { useEffect, useState } from "react";
 import { Address, Hex, zeroAddress } from "viem";
@@ -28,6 +28,7 @@ export default function Main({ account, type = SignerType.WEBAUTHN }: WalletProp
   const [fundModalOpen, setFundModalOpen] = useState(true);
   const [finalUserOpHash, setFinalUserOpHash] = useState<Hex | undefined>(undefined);
   const [blockExplorerUrl, setBlockExplorerUrl] = useState<string | undefined>(undefined);
+  const [paymaster, setPaymaster] = useState<Web3AuthPaymaster | undefined>(undefined);
   const [preparedTxDetails, setPreparedTxDetails] = useState<
     | (Web3AuthPrepareMultiChainUserOperationReturnType & {
         sourceChainIds: number[];
@@ -45,6 +46,7 @@ export default function Main({ account, type = SignerType.WEBAUTHN }: WalletProp
     setLoading(true);
     try {
       const paymaster = await initWeb3AuthPaymaster();
+      setPaymaster(paymaster);
       const parsedCrossChainUserOpParams = parseCrosschainUserOpData({
         txType,
         accountAddress,
@@ -52,6 +54,7 @@ export default function Main({ account, type = SignerType.WEBAUTHN }: WalletProp
         targetChainId,
         sourceFunds,
       });
+      console.log("parsedCrossChainUserOpParams", parsedCrossChainUserOpParams);
 
       setLoadingText("Preparing user operation...");
       const preparedOp = await prepareCrosschainUserOp({
@@ -73,14 +76,23 @@ export default function Main({ account, type = SignerType.WEBAUTHN }: WalletProp
   }
 
   async function handleTxExecute() {
-    if (!preparedTxDetails) return;
+    if (!preparedTxDetails ) return;
+    if (!paymaster) return;
 
     setTxModalOpen(false);
     setLoading(true);
 
     try {
+      setLoadingText("Signing crosschain user operation...");
+      const { inputTokens, outputToken, ...preparedMutliChainOp } = preparedTxDetails;
+      const signedMultiChainUserOp = await paymaster.core.signMultiChainUserOperation(
+        preparedMutliChainOp,
+        account,
+        inputTokens,
+        outputToken
+      );
       setLoadingText("Executing crosschain user operation...");
-      const { sourceUserOperationHashes, targetUserOperationHash } = await account.sendMultiChainUserOperation(preparedTxDetails);
+      const { sourceUserOperationHashes, targetUserOperationHash } = await account.sendMultiChainUserOperation(signedMultiChainUserOp);
       console.log("sourceUserOperationHashes", sourceUserOperationHashes);
 
       setLoadingText("Waiting for source op receipts...");

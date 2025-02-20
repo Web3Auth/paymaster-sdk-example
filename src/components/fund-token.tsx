@@ -3,7 +3,7 @@ import { fundTestToken } from "@web3auth/chain-abstraction-sdk";
 import Dropdown from "./dropdown";
 import { useState } from "react";
 import { getChainConfigById } from "@/utils";
-import { Address, createPublicClient, http, PublicClient } from "viem";
+import { Address, createPublicClient, http, parseUnits, PublicClient } from "viem";
 
 export default function FundToken({ onCancel, accountAddress }: { onCancel: () => void, accountAddress: Address }) {
   const [chainId, setChainId] = useState<number>();
@@ -20,7 +20,8 @@ export default function FundToken({ onCancel, accountAddress }: { onCancel: () =
         chain,
         transport: http(rpcUrl),
       });
-      await fundTestToken(publicClient as PublicClient, accountAddress);
+      const fundAmount = parseUnits("100000", 6);
+      await fundTestToken(publicClient as PublicClient, accountAddress, fundAmount);
       setMessage({ text: "Funding successful", type: "success" });
     } catch (error) {
       console.error(error);

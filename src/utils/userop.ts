@@ -66,8 +66,9 @@ export const prepareCrosschainUserOp = async (params: {
   inputTokens: Address[];
   outputToken: Address;
   sourceFunds?: Hex[];
+  targetAmount?: bigint;
 }) => {
-  const { paymaster, account, calls, sourceChainIds, targetChainId, inputTokens, outputToken, sourceFunds } = params;
+  const { paymaster, account, calls, sourceChainIds, targetChainId, inputTokens, outputToken, sourceFunds, targetAmount } = params;
   const { estimatedGasFeesOnTargetChain, ...preparedMultiChainUserOperation } = await paymaster.core.prepareMultiChainUserOperation({
     account,
     calls,
@@ -76,6 +77,7 @@ export const prepareCrosschainUserOp = async (params: {
     inputTokens,
     outputToken,
     sourceFunds,
+    targetAmount,
   });
 
   return { estimatedGasFeesOnTargetChain, ...preparedMultiChainUserOperation };
