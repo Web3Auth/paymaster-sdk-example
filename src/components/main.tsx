@@ -1,12 +1,12 @@
 "use client";
 
-import { MultiChainAccount, Web3AuthPaymaster, Web3AuthPrepareMultiChainUserOperationReturnType } from "@web3auth/chain-abstraction-sdk";
+import { MultiChainAccount, Web3AuthPaymaster } from "@web3auth/chain-abstraction-sdk";
 import { SignerType } from "@web3auth/erc7579";
 import { useEffect, useState } from "react";
 import { Address, Hex, zeroAddress } from "viem";
 import Modal from "./modal";
 import TxForm from "./tx-form";
-import { CrosschainTransactionType } from "@/types";
+import { CrosschainTransactionType, PreparedCrossChainUserOp } from "@/types";
 import { initWeb3AuthPaymaster } from "@/utils/paymaster";
 import BalanceForm from "./balance-form";
 import { getBlockExplorerUrl, getBundlerClient } from "@/utils";
@@ -29,15 +29,7 @@ export default function Main({ account, type = SignerType.WEBAUTHN }: WalletProp
   const [finalUserOpHash, setFinalUserOpHash] = useState<Hex | undefined>(undefined);
   const [blockExplorerUrl, setBlockExplorerUrl] = useState<string | undefined>(undefined);
   const [paymaster, setPaymaster] = useState<Web3AuthPaymaster | undefined>(undefined);
-  const [preparedTxDetails, setPreparedTxDetails] = useState<
-    | (Web3AuthPrepareMultiChainUserOperationReturnType & {
-        sourceChainIds: number[];
-        targetChainId: number;
-        sourceAmount1?: Hex;
-        sourceAmount2?: Hex;
-      })
-    | null
-  >(null);
+  const [preparedTxDetails, setPreparedTxDetails] = useState<PreparedCrossChainUserOp | null>(null);
 
   async function handleButtonClick(txType: CrosschainTransactionType) {
     setTxType(txType);

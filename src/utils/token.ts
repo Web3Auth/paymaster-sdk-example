@@ -38,8 +38,16 @@ export const createTokenTransferCall = (tokenAddress: Address, receiverAddress: 
   }
 }
 
-export const parseW3PTestTokenValue = (amount: bigint) => {
+export const parseW3PTestTokenValue = (amount: bigint | string) => {
+  if (typeof amount === 'string') {
+    amount = BigInt(amount);
+  }
+
+  if (amount === 0n) return "0 W3PTEST";
   let value = formatUnits(amount, 6);
   value = parseFloat(value).toFixed(4);
+  if (Number(value.split('.')[1]) === 0) {
+    value = value.split('.')[0];
+  }
   return `${value} W3PTEST`;
 }

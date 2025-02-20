@@ -1,26 +1,19 @@
 "use client";
 
 import { TEST_TRANSFER_AMOUNT, SUPPORTED_CHAINS } from "@/config";
-import { CrosschainTransactionType } from "@/types";
+import { CrosschainTransactionType, PreparedCrossChainUserOp } from "@/types";
 import { useEffect, useState } from "react";
 import { formatUnits, Hex, parseUnits, toHex } from "viem";
 import Dropdown from "./dropdown";
 import MultiSourceTx from "./multi-sourc-tx";
-import { parseW3PTestTokenValue } from "@/utils/token";
+import TxDetails from "./tx-details";
 
 interface ITxFormProps {
   type: CrosschainTransactionType;
   onCancel: () => void;
   onPrepare: (sourceChainIds: number[], targetChainId: number, sourceFunds?: Hex[]) => Promise<void>;
   onExecute: () => Promise<void>;
-  preparedTxDetails: {
-    estimatedGasFeesOnTargetChain: bigint;
-    totalTransactionAmountOnTargetChain: bigint;
-    sourceChainIds: number[];
-    targetChainId: number;
-    sourceAmount1?: Hex;
-    sourceAmount2?: Hex;
-  } | null;
+  preparedTxDetails: PreparedCrossChainUserOp | null;
 }
 
 export default function TxForm({ type, onCancel, onPrepare, onExecute, preparedTxDetails }: ITxFormProps) {
@@ -78,14 +71,6 @@ export default function TxForm({ type, onCancel, onPrepare, onExecute, preparedT
 
   function handleTargetChainSelected(chainId: number) {
     setTargetChainId(chainId);
-  }
-
-  function computeNetAmount(preparedTxDetails: {
-    estimatedGasFeesOnTargetChain: bigint;
-    totalTransactionAmountOnTargetChain: bigint;
-  }) {
-    const netAmount = preparedTxDetails.totalTransactionAmountOnTargetChain - preparedTxDetails.estimatedGasFeesOnTargetChain;
-    return parseW3PTestTokenValue(netAmount);
   }
 
   async function handlePrepareClick() {
@@ -154,17 +139,7 @@ export default function TxForm({ type, onCancel, onPrepare, onExecute, preparedT
       )}
 
       {preparedTxDetails && (
-        <div className="mt-4 p-4 bg-gray-100 rounded-md">
-          <h3 className="text-lg font-bold mb-2">Transaction Details</h3>
-          <div className="space-y-2">
-            <p>Estimated Gas Fees: {parseW3PTestTokenValue(preparedTxDetails.estimatedGasFeesOnTargetChain)}</p>
-            <p>Total Transaction Amount: {parseW3PTestTokenValue(preparedTxDetails.totalTransactionAmountOnTargetChain)}</p>
-            <p>
-              Net Receivable Amount:&nbsp;
-              {computeNetAmount(preparedTxDetails)}
-            </p>
-          </div>
-        </div>
+        <TxDetails preparedTxDetails={preparedTxDetails} />
       )}
 
       <div className="flex justify-end gap-2 mt-4">

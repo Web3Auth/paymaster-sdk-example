@@ -1,7 +1,7 @@
 "use client";
 
 import { CHAIN_1, CHAIN_1_RPC_URL, CHAIN_2, CHAIN_2_RPC_URL, CHAIN_3, CHAIN_3_RPC_URL, CHAIN_4, CHAIN_4_RPC_URL, CHAIN_5, CHAIN_5_RPC_URL } from "@/config";
-import { queryErc20TokenBalance } from "@/utils/token";
+import { parseW3PTestTokenValue, queryErc20TokenBalance } from "@/utils/token";
 import { useEffect, useState } from "react";
 import { Address } from "viem";
 
@@ -12,11 +12,11 @@ interface IBalanceFormProps {
 
 export default function BalanceForm({ account, onClose }: IBalanceFormProps) {
   const [loading, setLoading] = useState(true);
-  const [balance1, setBalance1] = useState<bigint>(0n);
-  const [balance2, setBalance2] = useState<bigint>(0n);
-  const [balance3, setBalance3] = useState<bigint>(0n);
-  const [balance4, setBalance4] = useState<bigint>(0n);
-  const [balance5, setBalance5] = useState<bigint>(0n);
+  const [balance1, setBalance1] = useState<string>("0");
+  const [balance2, setBalance2] = useState<string>("0");
+  const [balance3, setBalance3] = useState<string>("0");
+  const [balance4, setBalance4] = useState<string>("0");
+  const [balance5, setBalance5] = useState<string>("0");
 
   useEffect(() => {
     (async () => {
@@ -29,11 +29,11 @@ export default function BalanceForm({ account, onClose }: IBalanceFormProps) {
           queryErc20TokenBalance(account, CHAIN_5, CHAIN_5_RPC_URL),
         ])
   
-        setBalance1(balance1);
-        setBalance2(balance2);
-        setBalance3(balance3);
-        setBalance4(balance4);
-        setBalance5(balance5);
+        setBalance1(parseW3PTestTokenValue(balance1));
+        setBalance2(parseW3PTestTokenValue(balance2));
+        setBalance3(parseW3PTestTokenValue(balance3));
+        setBalance4(parseW3PTestTokenValue(balance4));
+        setBalance5(parseW3PTestTokenValue(balance5));
       } catch (error) {
         console.error("error fetching balances", error);
       } finally {
