@@ -17,7 +17,7 @@ export const parseCrosschainUserOpData = (params: {
   const { txType, accountAddress, sourceChainIds, targetChainId } = params;
   const inputTokens = params.inputTokens || [WEB3PAY_TEST_TOKEN];
   const outputToken = params.outputToken || WEB3PAY_TEST_TOKEN;
-  const transferAmount = parseUnits('10', 6);
+  let targetAmount: bigint | undefined
   let calls: Call[] = [];
   let sourceFunds: Hex[] | undefined;
 
@@ -26,9 +26,11 @@ export const parseCrosschainUserOpData = (params: {
   }
 
   if (txType === CrosschainTransactionType.TRANSFER_LIQUIDITY) {
-    calls = [createTokenTransferCall(WEB3PAY_TEST_TOKEN, accountAddress, transferAmount)]
+    targetAmount = parseUnits('10', 6);
+    calls = [createTokenTransferCall(WEB3PAY_TEST_TOKEN, accountAddress, targetAmount)]
   } else if (txType === CrosschainTransactionType.MULTI_SOURCE) {
-    calls = [createTokenTransferCall(WEB3PAY_TEST_TOKEN, accountAddress, transferAmount)]
+    targetAmount = parseUnits('10', 6);
+    calls = [createTokenTransferCall(WEB3PAY_TEST_TOKEN, accountAddress, targetAmount)]
     inputTokens.push(WEB3PAY_TEST_TOKEN);
     if (sourceChainIds.length < 2) {
       throw new Error("At least `Two` source chains are needed for multi-source transactions")
@@ -51,6 +53,7 @@ export const parseCrosschainUserOpData = (params: {
     targetChainId,
     calls,
     sourceFunds,
+    targetAmount,
   }
 }
 
