@@ -7,9 +7,9 @@ export const CHAIN_2 = polygonAmoy;
 export const CHAIN_3 = sepolia;
 
 const proxyRpcUrl = "https://rpc-proxy.web3auth.io";
-export const CHAIN_1_RPC_URL = `${proxyRpcUrl}?network=${CHAIN_1.id}`;
-export const CHAIN_2_RPC_URL = `${proxyRpcUrl}?network=${CHAIN_2.id}`;
-export const CHAIN_3_RPC_URL = `${proxyRpcUrl}?network=${CHAIN_3.id}`;
+export const CHAIN_1_RPC_URL = `${proxyRpcUrl}?network=${CHAIN_1.id}&bundler=pimlico`;
+export const CHAIN_2_RPC_URL = `${proxyRpcUrl}?network=${CHAIN_2.id}&bundler=pimlico`;
+export const CHAIN_3_RPC_URL = `${proxyRpcUrl}?network=${CHAIN_3.id}&bundler=pimlico`;
 
 export const MULTI_CHAIN_RPC_INFO = [
   { chainId: CHAIN_1.id, rpcUrl: CHAIN_1_RPC_URL },
@@ -29,12 +29,9 @@ export const OUTPUT_TOKEN = WETH_CONTRACT_MAP[CHAIN_3.id];
 export const WEB3PAY_API_URL = "https://lrc-accounts.web3auth.io/api";
 
 // Note: This NFT is only available on Polygon Amoy
-export const WEB3AUTH_NFT_ADDRESS: Address =
-  "0xD0f3053e39040Eb2e0bc8B4eF8f7bF92636aCd25";
-export const WEB3PAY_TEST_TOKEN: Address =
-  "0x33ce8240046670f56f5021A37bB55b35B8C9df8A";
-export const PAYMASTER_ADDRESS: Address =
-  "0x4462408cd14a9b319F931D191a858A0C474F57f3";
+export const WEB3AUTH_NFT_ADDRESS: Address = "0xD0f3053e39040Eb2e0bc8B4eF8f7bF92636aCd25";
+export const WEB3PAY_TEST_TOKEN: Address = "0x33ce8240046670f56f5021A37bB55b35B8C9df8A";
+export const PAYMASTER_ADDRESS: Address = "0x4462408cd14a9b319F931D191a858A0C474F57f3";
 export const DEFAULT_VALID_AFTER = Number("0x0000000000001234");
 export const DEFAULT_VALID_UNTIL = 1907424000000;
 
@@ -44,4 +41,4 @@ export const MULTI_CHAIN_PAYMASTER_SETTINGS: PaymasterSettings = {
   paymasterVersion: PaymasterVersion.V0_2_0,
 };
 
-export const TEST_TRANSFER_AMOUNT = parseUnits('10', 6);
+export const TEST_TRANSFER_AMOUNT = parseUnits("10", 6);
