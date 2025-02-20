@@ -1,4 +1,4 @@
-import { MULTI_CHAIN_RPC_INFO, CHAIN_2, CHAIN_1, CHAIN_3 } from "@/config";
+import { MULTI_CHAIN_RPC_INFO, SUPPORTED_CHAINS } from "@/config";
 import { http } from "viem";
 import { createBundlerClient as createViemBundlerClient } from "viem/account-abstraction";
 
@@ -7,7 +7,7 @@ export const getChainConfigById = (chainId: number) => {
   if (!chainConfig) {
     throw new Error(`Chain config not found for chainId: ${chainId}`);
   }
-  const chain = [CHAIN_1, CHAIN_2, CHAIN_3].find((chain) => chain.id === chainId);
+  const chain = SUPPORTED_CHAINS.find((chain) => chain.id === chainId);
   if (!chain) {
     throw new Error(`Chain not found for chainId: ${chainId}`);
   }
@@ -23,8 +23,7 @@ export const getBundlerClient = (chainId: number) => {
 }
 
 export const getBlockExplorerUrl = (chainId: number) => {
-  const chains = [CHAIN_1, CHAIN_2, CHAIN_3];
-  const chain = chains.find((chain) => chain.id === chainId);
+  const chain = SUPPORTED_CHAINS.find((chain) => chain.id === chainId);
   if (!chain) {
     throw new Error(`Chain not found for chainId: ${chainId}`);
   }

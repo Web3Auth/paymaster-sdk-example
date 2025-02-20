@@ -1,26 +1,36 @@
 import { PaymasterSettings, PaymasterVersion } from "@web3auth/chain-abstraction-sdk";
 import { Address, parseUnits } from "viem";
-import { sepolia, baseSepolia, polygonAmoy } from "viem/chains";
+import { sepolia, baseSepolia, polygonAmoy, optimismSepolia, arbitrumSepolia } from "viem/chains";
 
 export const CHAIN_1 = baseSepolia;
 export const CHAIN_2 = polygonAmoy;
 export const CHAIN_3 = sepolia;
+export const CHAIN_4 = optimismSepolia;
+export const CHAIN_5 = arbitrumSepolia;
+
+export const SUPPORTED_CHAINS = [CHAIN_1, CHAIN_2, CHAIN_3, CHAIN_4, CHAIN_5];
 
 const proxyRpcUrl = "https://rpc-proxy.web3auth.io";
 export const CHAIN_1_RPC_URL = `${proxyRpcUrl}?network=${CHAIN_1.id}&bundler=pimlico`;
 export const CHAIN_2_RPC_URL = `${proxyRpcUrl}?network=${CHAIN_2.id}&bundler=pimlico`;
 export const CHAIN_3_RPC_URL = `${proxyRpcUrl}?network=${CHAIN_3.id}&bundler=pimlico`;
+export const CHAIN_4_RPC_URL = `${proxyRpcUrl}?network=${CHAIN_4.id}&bundler=pimlico`;
+export const CHAIN_5_RPC_URL = `${proxyRpcUrl}?network=${CHAIN_5.id}&bundler=pimlico`;
 
 export const MULTI_CHAIN_RPC_INFO = [
   { chainId: CHAIN_1.id, rpcUrl: CHAIN_1_RPC_URL },
   { chainId: CHAIN_2.id, rpcUrl: CHAIN_2_RPC_URL },
   { chainId: CHAIN_3.id, rpcUrl: CHAIN_3_RPC_URL },
+  { chainId: CHAIN_4.id, rpcUrl: CHAIN_4_RPC_URL },
+  { chainId: CHAIN_5.id, rpcUrl: CHAIN_5_RPC_URL },
 ];
 
 export const WETH_CONTRACT_MAP: Record<number, Address> = {
   [CHAIN_1.id]: "0x4200000000000000000000000000000000000006",
   [CHAIN_2.id]: "0x52eF3d68BaB452a294342DC3e5f464d7f610f72E",
   [CHAIN_3.id]: "0x4200000000000000000000000000000000000006",
+  [CHAIN_4.id]: "0x4200000000000000000000000000000000000006",
+  [CHAIN_5.id]: "0x4200000000000000000000000000000000000006",
 };
 export const INPUT_TOKEN_1 = WETH_CONTRACT_MAP[CHAIN_1.id];
 export const INPUT_TOKEN_2 = WETH_CONTRACT_MAP[CHAIN_2.id];

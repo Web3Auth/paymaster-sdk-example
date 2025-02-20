@@ -1,6 +1,6 @@
 "use client";
 
-import { CHAIN_1, CHAIN_1_RPC_URL, CHAIN_2, CHAIN_2_RPC_URL, CHAIN_3, CHAIN_3_RPC_URL } from "@/config";
+import { CHAIN_1, CHAIN_1_RPC_URL, CHAIN_2, CHAIN_2_RPC_URL, CHAIN_3, CHAIN_3_RPC_URL, CHAIN_4, CHAIN_4_RPC_URL, CHAIN_5, CHAIN_5_RPC_URL } from "@/config";
 import { queryErc20TokenBalance } from "@/utils/token";
 import { useEffect, useState } from "react";
 import { Address } from "viem";
@@ -12,22 +12,28 @@ interface IBalanceFormProps {
 
 export default function BalanceForm({ account, onClose }: IBalanceFormProps) {
   const [loading, setLoading] = useState(true);
-  const [sourceBalance1, setSourceBalance1] = useState<bigint>(0n);
-  const [sourceBalance2, setSourceBalance2] = useState<bigint>(0n);
-  const [targetBalance, setTargetBalance] = useState<bigint>(0n);
+  const [balance1, setBalance1] = useState<bigint>(0n);
+  const [balance2, setBalance2] = useState<bigint>(0n);
+  const [balance3, setBalance3] = useState<bigint>(0n);
+  const [balance4, setBalance4] = useState<bigint>(0n);
+  const [balance5, setBalance5] = useState<bigint>(0n);
 
   useEffect(() => {
     (async () => {
       try {
-        const [sourceBalance1, sourceBalance2, targetBalance] = await Promise.all([
+        const [balance1, balance2, balance3, balance4, balance5] = await Promise.all([
           queryErc20TokenBalance(account, CHAIN_1, CHAIN_1_RPC_URL),
           queryErc20TokenBalance(account, CHAIN_2, CHAIN_2_RPC_URL),
           queryErc20TokenBalance(account, CHAIN_3, CHAIN_3_RPC_URL),
+          queryErc20TokenBalance(account, CHAIN_4, CHAIN_4_RPC_URL),
+          queryErc20TokenBalance(account, CHAIN_5, CHAIN_5_RPC_URL),
         ])
   
-        setSourceBalance1(sourceBalance1);
-        setSourceBalance2(sourceBalance2);
-        setTargetBalance(targetBalance);
+        setBalance1(balance1);
+        setBalance2(balance2);
+        setBalance3(balance3);
+        setBalance4(balance4);
+        setBalance5(balance5);
       } catch (error) {
         console.error("error fetching balances", error);
       } finally {
@@ -51,19 +57,31 @@ export default function BalanceForm({ account, onClose }: IBalanceFormProps) {
               <p className="text-xs font-bold">{CHAIN_1.name}</p>
               <div className="flex items-center gap-2 w-full bg-gray-100 p-2 rounded-md">
                 <p className="text-xs bg-gray-100 p-2 rounded-md text-gray-800">
-                  W3P Balance: <b className="text-sm">{sourceBalance1}</b>
+                  W3P Balance: <b className="text-sm">{balance1}</b>
                 </p>
               </div>
               <p className="text-xs font-bold">{CHAIN_2.name}</p>
               <div className="flex items-center gap-2 w-full bg-gray-100 p-2 rounded-md">
                 <p className="text-xs bg-gray-100 p-2 rounded-md text-gray-800">
-                  W3P Balance: <b className="text-sm">{sourceBalance2}</b>
+                  W3P Balance: <b className="text-sm">{balance2}</b>
                 </p>
               </div>
               <p className="text-xs font-bold">{CHAIN_3.name}</p>
               <div className="flex items-center gap-2 w-full bg-gray-100 p-2 rounded-md">
                 <p className="text-xs bg-gray-100 p-2 rounded-md text-gray-800">
-                  W3P Balance: <b className="text-sm">{targetBalance}</b>
+                  W3P Balance: <b className="text-sm">{balance3}</b>
+                </p>
+              </div>
+              <p className="text-xs font-bold">{CHAIN_4.name}</p>
+              <div className="flex items-center gap-2 w-full bg-gray-100 p-2 rounded-md">
+                <p className="text-xs bg-gray-100 p-2 rounded-md text-gray-800">
+                  W3P Balance: <b className="text-sm">{balance4}</b>
+                </p>
+              </div>
+              <p className="text-xs font-bold">{CHAIN_5.name}</p>
+              <div className="flex items-center gap-2 w-full bg-gray-100 p-2 rounded-md">
+                <p className="text-xs bg-gray-100 p-2 rounded-md text-gray-800">
+                  W3P Balance: <b className="text-sm">{balance5}</b>
                 </p>
               </div>
             </div>

@@ -1,4 +1,4 @@
-import { CHAIN_1, CHAIN_2, CHAIN_3, WEB3PAY_TEST_TOKEN } from "@/config";
+import { SUPPORTED_CHAINS, WEB3PAY_TEST_TOKEN } from "@/config";
 import { fundTestToken } from "@web3auth/chain-abstraction-sdk";
 import Dropdown from "./dropdown";
 import { useState } from "react";
@@ -48,7 +48,7 @@ export default function FundToken({ onCancel, accountAddress }: { onCancel: () =
             <div className="flex flex-col gap-2">
             <p className="text-sm font-bold text-gray-900">Select Chain:</p>
             <div className="flex gap-2">
-              <Dropdown options={[CHAIN_1, CHAIN_2, CHAIN_3]} onSelect={setChainId} />
+              <Dropdown options={SUPPORTED_CHAINS} onSelect={setChainId} />
             </div>
           </div>
           {message && (

@@ -1,5 +1,5 @@
 import Dropdown from "./dropdown";
-import { CHAIN_1, CHAIN_2, CHAIN_3 } from "@/config";
+import { SUPPORTED_CHAINS } from "@/config";
 
 interface IMultiSourceTxProps {
   handleSourceChain1Selected: (chainId: number) => void;
@@ -27,7 +27,7 @@ export default function MultiSourceTx({
       <div className="flex flex-col gap-2 mb-2">
         <p className="text-sm font-bold text-gray-900">Source Chain 1:</p>
         <div className="flex gap-2">
-          <Dropdown options={[CHAIN_1, CHAIN_2, CHAIN_3]} onSelect={handleSourceChain1Selected} value={sourceChainId1} />
+          <Dropdown options={SUPPORTED_CHAINS} onSelect={handleSourceChain1Selected} value={sourceChainId1} />
           <div className="flex items-center gap-1">
             <input
               type="number"
@@ -42,7 +42,7 @@ export default function MultiSourceTx({
       <div className="flex flex-col gap-2 mb-2">
         <p className="text-sm font-bold text-gray-900">Source Chain 2:</p>
         <div className="flex gap-2">
-          <Dropdown options={[CHAIN_1, CHAIN_2, CHAIN_3]} onSelect={handleSourceChain2Selected} value={sourceChainId2} />
+          <Dropdown options={SUPPORTED_CHAINS} onSelect={handleSourceChain2Selected} value={sourceChainId2} />
           <div className="flex items-center gap-1">
             <input
               type="number"

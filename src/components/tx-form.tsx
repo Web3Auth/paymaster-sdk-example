@@ -1,6 +1,6 @@
 "use client";
 
-import { CHAIN_3, CHAIN_1, CHAIN_2, TEST_TRANSFER_AMOUNT } from "@/config";
+import { TEST_TRANSFER_AMOUNT, SUPPORTED_CHAINS } from "@/config";
 import { CrosschainTransactionType } from "@/types";
 import { useEffect, useState } from "react";
 import { formatUnits, Hex, parseUnits, toHex } from "viem";
@@ -134,7 +134,7 @@ export default function TxForm({ type, onCancel, onPrepare, onExecute, preparedT
         <div className="flex flex-col gap-2">
           <p className="text-sm font-bold text-gray-900">Source Chain:</p>
           <div className="flex gap-2">
-            <Dropdown options={[CHAIN_1, CHAIN_2, CHAIN_3]} onSelect={handleSourceChainId1Selected} value={sourceChainId1} />
+            <Dropdown options={SUPPORTED_CHAINS} onSelect={handleSourceChainId1Selected} value={sourceChainId1} />
           </div>
         </div>
       )}
@@ -142,7 +142,7 @@ export default function TxForm({ type, onCancel, onPrepare, onExecute, preparedT
       <div className="flex flex-col gap-2">
         <p className="text-sm font-bold text-gray-900">Target Chain:</p>
         <div className="flex gap-2">
-          <Dropdown options={[CHAIN_1, CHAIN_2, CHAIN_3]} onSelect={handleTargetChainSelected} value={targetChainId} />
+          <Dropdown options={SUPPORTED_CHAINS} onSelect={handleTargetChainSelected} value={targetChainId} />
         </div>
       </div>
       {type === CrosschainTransactionType.MULTI_SOURCE && (
