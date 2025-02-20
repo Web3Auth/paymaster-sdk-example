@@ -42,7 +42,7 @@ export default function TxForm({ type, onCancel, onPrepare, onExecute, preparedT
         return `
         Use a Test ERC-20 token from the source chain to pay fees 
         for minting a Test Token on the target chain.
-        (Mint amount: 10 W3PTEST)
+        (Mint amount: 100 W3PTEST)
         `;
       case CrosschainTransactionType.TRANSFER_LIQUIDITY:
         return `
@@ -86,7 +86,6 @@ export default function TxForm({ type, onCancel, onPrepare, onExecute, preparedT
 
   useEffect(() => {
     if (preparedTxDetails) {
-      console.log(preparedTxDetails);
       setSourceChainId1(preparedTxDetails.sourceChainIds[0]);
       setSourceChainId2(preparedTxDetails.sourceChainIds[1]);
       setTargetChainId(preparedTxDetails.targetChainId);

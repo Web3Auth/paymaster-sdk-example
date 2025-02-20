@@ -13,7 +13,6 @@ export const parseCrosschainUserOpData = (params: {
   outputToken?: Address;
   sourceFunds?: Hex[];
 }) => {
-  console.log("params", params);
   const { txType, accountAddress, sourceChainIds, targetChainId } = params;
   const inputTokens = params.inputTokens || [WEB3PAY_TEST_TOKEN];
   const outputToken = params.outputToken || WEB3PAY_TEST_TOKEN;
